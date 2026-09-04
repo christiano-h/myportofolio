@@ -160,6 +160,30 @@ h1,
     grid-area: photo;
     align-self: center;
     position: relative;
+    color: var(--ink);
+    position: relative;
+    z-index: 0;
+    transition:
+        transform 0.25s ease,
+        box-shadow 0.25s ease;
+}
+
+.hero-photo:hover {
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: 40px 40px 28px rgba(248, 149, 83, 0.5);
+    z-index: 1;
+}
+
+.hero-photo:active {
+    transform: translateY(-2px) scale(0.99);
+    /* saat ditekan */
+    box-shadow: 0 4px 10px rgba(28, 25, 23, 0.18);
+}
+
+.hero-photo:focus-visible {
+    outline: 3px solid var(--accent);
+    /* keyboard focus */
+    outline-offset: 3px;
 }
 
 .photo-block {
@@ -204,6 +228,31 @@ h1,
     display: flex;
     flex-direction: column;
     min-width: 0;
+    text-decoration: none;
+    color: var(--ink);
+    position: relative;
+    z-index: 0;
+    transition:
+        transform 0.25s ease,
+        box-shadow 0.25s ease;
+}
+
+.portfolio-card:hover {
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: 0 14px 28px rgba(209, 121, 62, 0.3);
+    z-index: 1;
+}
+
+.portfolio-card:active {
+    transform: translateY(-2px) scale(0.99);
+    /* saat ditekan */
+    box-shadow: 0 4px 10px rgba(28, 25, 23, 0.18);
+}
+
+.portfolio-card:focus-visible {
+    outline: 3px solid var(--accent);
+    /* keyboard focus */
+    outline-offset: 3px;
 }
 
 .portfolio-title {
