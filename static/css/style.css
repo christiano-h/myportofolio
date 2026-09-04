@@ -168,16 +168,30 @@ h1,
         box-shadow 0.25s ease;
 }
 
-.hero-photo:hover {
-    transform: translateY(-4px) scale(1.02);
-    box-shadow: 40px 40px 28px rgba(248, 149, 83, 0.5);
-    z-index: 1;
+@media (hover: hover) and (pointer: fine) {
+    .hero-photo:hover {
+        transform: translateY(-4px) scale(1.02);
+        box-shadow: 40px 40px 28px rgba(248, 149, 83, 0.5);
+        z-index: 1;
+    }
 }
+
 
 .hero-photo:active {
     transform: translateY(-2px) scale(0.99);
-    /* saat ditekan */
     box-shadow: 0 4px 10px rgba(28, 25, 23, 0.18);
+}
+
+@media (max-width: 600px) {
+    .hero-photo {
+        transition: transform 0.25s ease;
+    }
+
+    .hero-photo.tapped {
+        transform: scale(1.06);
+        box-shadow: 20px 20px 30px rgba(248, 149, 83, 0.5);
+        z-index: 1;
+    }
 }
 
 .hero-photo:focus-visible {
@@ -185,6 +199,7 @@ h1,
     /* keyboard focus */
     outline-offset: 3px;
 }
+
 
 .photo-block {
     position: absolute;
@@ -237,21 +252,35 @@ h1,
         box-shadow 0.25s ease;
 }
 
+@media (hover: none) {
+    .portfolio-card:hover {
+        transform: none;
+        box-shadow: none;
+    }
+}
+
 .portfolio-card:hover {
     transform: translateY(-4px) scale(1.02);
     box-shadow: 0 14px 28px rgba(209, 121, 62, 0.3);
     z-index: 1;
 }
 
+.portfolio-card.is-active {
+    /* buat kartu saat carousel (views HP) */
+    border: 3px solid var(--ink);
+    transform: translateY(-4px) scale(1.01);
+    box-shadow: 0px 10px 16px -6px rgba(209, 121, 62, 0.40);
+    z-index: 1;
+}
+
 .portfolio-card:active {
-    transform: translateY(-2px) scale(0.99);
     /* saat ditekan */
+    transform: translateY(-2px) scale(0.99);
     box-shadow: 0 4px 10px rgba(28, 25, 23, 0.18);
 }
 
 .portfolio-card:focus-visible {
     outline: 3px solid var(--accent);
-    /* keyboard focus */
     outline-offset: 3px;
 }
 
@@ -283,11 +312,11 @@ h1,
 .portfolio-track {
     display: flex;
     gap: 0.5rem;
-    overflow-y: auto;
-    scroll-snap-type: y mandatory;
-    padding-bottom: 0.5rem;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    padding: 24px 3px 28px;
     scrollbar-width: 1px;
-    /* sembunyikan scrollbar biar bersih */
 }
 
 .portfolio-track::-webkit-scrollbar {
@@ -295,7 +324,7 @@ h1,
 }
 
 .portfolio-card {
-    flex: 0 0 100%;
+    flex: 0 0 85%;
     scroll-snap-align: center;
 }
 

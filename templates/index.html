@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
 
+
 <body>
     <header class="site-header">
         <div class="container">
@@ -68,20 +69,17 @@
                 <h1 class="projects-title">Projects</h1>
                 <div class="portfolio-track" aria-label="Portofolio">
                     <article class="portfolio-card">
-                        <img class="portfolio-img" src="static/css/img/daftar_sintaks.jpg"
-                        alt="Thumbnail Project 1">
+                        <img class="portfolio-img" src="static/css/img/daftar_sintaks.jpg" alt="Thumbnail Project 1">
                         <h3 class="portfolio-title">SINTAKS</h3>
                         <p class="portfolio-desc">Ayooo semua daftar sintaks</p>
                     </article>
                     <article class="portfolio-card">
-                        <img class="portfolio-img" src="static/css/img/fish_gif.gif"
-                            alt="Thumbnail Project 1">
+                        <img class="portfolio-img" src="static/css/img/fish_gif.gif" alt="Thumbnail Project 1">
                         <h3 class="portfolio-title">Ini ikan apa?</h3>
                         <p class="portfolio-desc">OMG!!! ADA IKANNNN</p>
                     </article>
                     <article class="portfolio-card">
-                        <img class="portfolio-img" src="static/css/img/skuba.png"
-                            alt="Thumbnail Project 1">
+                        <img class="portfolio-img" src="static/css/img/skuba.png" alt="Thumbnail Project 1">
                         <h3 class="portfolio-title">SCUBAAAAA</h3>
                         <p class="portfolio-desc">SCUBA...SCUBA...SCUBA</p>
                     </article>
@@ -93,7 +91,7 @@
                     </article>
                     <article class="portfolio-card">
                         <img class="portfolio-img" src="static/css/img/project-placeholder.svg"
-                        alt="Thumbnail Project 1">
+                            alt="Thumbnail Project 1">
                         <h3 class="portfolio-title">Project 1</h3>
                         <p class="portfolio-desc">Satu kalimat deskripsi singkat project ini.</p>
                     </article>
@@ -108,6 +106,61 @@
             <p>&copy; 2026 Ano. Fakultas Ilmu Komputer, Universitas Indonesia.</p>
         </div>
     </footer>
+
+    <script>
+        (function () {
+            var photo = document.querySelector('.hero-photo');
+            if (!photo) return;
+            photo.addEventListener('click', function () {
+                photo.classList.add('tapped');
+                clearTimeout(photo._t);
+                photo._t = setTimeout(function () {
+                    photo.classList.remove('tapped');
+                }, 200);
+            });
+        })();
+
+                (function () {
+            var track = document.querySelector('.portfolio-track');
+            if (!track) return;
+            var cards = [].slice.call(track.querySelectorAll('.portfolio-card'));
+            if (!cards.length) return;
+
+            function update() {
+                // Carousel hanya aktif kalau isinya overflow (bisa digeser)
+                var isCarousel = track.scrollWidth > track.clientWidth + 1;
+                if (!isCarousel) {
+                    cards.forEach(function (c) { c.classList.remove('is-active'); });
+                    return;
+                }
+                // Cari kartu yang paling dekat ke tengah track
+                var rect = track.getBoundingClientRect();
+                var center = rect.left + rect.width / 2;
+                var best = cards[0], bestDist = Infinity;
+                cards.forEach(function (card) {
+                    var r = card.getBoundingClientRect();
+                    var dist = Math.abs((r.left + r.width / 2) - center);
+                    if (dist < bestDist) { bestDist = dist; best = card; }
+                });
+                cards.forEach(function (c) {
+                    c.classList.toggle('is-active', c === best);
+                });
+            }
+
+            var ticking = false;
+            track.addEventListener('scroll', function () {
+                if (!ticking) {
+                    requestAnimationFrame(function () { update(); ticking = false; });
+                    ticking = true;
+                }
+            }, { passive: true });
+
+            window.addEventListener('resize', update);
+            window.addEventListener('load', update);
+            update();
+        })();
+    </script>
+
 </body>
 
 </html>
