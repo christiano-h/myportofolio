@@ -7,11 +7,16 @@
 :root {
     --ink: #1c1917;
     --paper: #faf6f0;
+    --paper-dark: #fff1dc;
     --accent: #d95d39;
     --accent-dark: #a8442a;
     --line: #e3d9c9;
     --text-muted: #6b6459;
     --radius: 4px;
+    --radius-border: 8px;
+    --accent-terracotta: #b34728;
+    --accent-forest: #2b4c3f;
+    --color-border: #585858;
 }
 
 body {
@@ -21,7 +26,8 @@ body {
     line-height: 1.6;
 }
 
-h1, .brand {
+h1,
+.brand {
     font-family: "Space Grotesk", -apple-system, sans-serif;
 }
 
@@ -30,6 +36,7 @@ h1, .brand {
     margin: 0 auto;
     padding: 0 1.5rem;
 }
+
 .site-header {
     border-bottom: 1px solid var(--line);
 }
@@ -60,7 +67,7 @@ h1, .brand {
 }
 
 .hero {
-    padding: 4.5rem 0 5rem;
+    padding: 3rem 0 3rem;
 }
 
 .hero-grid {
@@ -166,6 +173,95 @@ h1, .brand {
     z-index: 0;
 }
 
+.projects {
+    position: relative;
+    isolation: isolate;
+    background-color: var(--paper-dark);
+    padding: 2rem 0 4rem;
+}
+
+.projects::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background:
+        linear-gradient(to bottom, var(--paper) 0%, var(--paper-dark) 100%) top center / 100% 6rem no-repeat;
+}
+
+.projects-title {
+    font-family: "Space Grotesk", sans-serif;
+    font-size: 2rem;
+    margin-bottom: 1.5rem;
+}
+
+/* Kartu */
+.portfolio-card {
+    background-color: var(--paper);
+    border: 2.5px solid var(--color-border);
+    border-radius: var(--radius-border);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.portfolio-title {
+    color: var(--ink);
+    padding: 1rem 1rem 0rem 1rem;
+    font-family: "Space Grotesk", sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin: 0;
+}
+
+.portfolio-img {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    /* foto persegi 1:1 */
+    object-fit: cover;
+    display: block;
+}
+
+.portfolio-desc {
+    padding: 0rem 1rem 1rem;
+    color: var(--ink);
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+/* ===== HP: 1 kartu per layar, geser horizontal (snap) ===== */
+.portfolio-track {
+    display: flex;
+    gap: 0.5rem;
+    overflow-y: auto;
+    scroll-snap-type: y mandatory;
+    padding-bottom: 0.5rem;
+    scrollbar-width: 1px;
+    /* sembunyikan scrollbar biar bersih */
+}
+
+.portfolio-track::-webkit-scrollbar {
+    display: none;
+}
+
+.portfolio-card {
+    flex: 0 0 100%;
+    scroll-snap-align: center;
+}
+
+/* ===== Laptop: 3-4 kartu sebaris, lebih dari itu wrap ke bawah ===== */
+@media (min-width: 760px) {
+    .portfolio-track {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(425px, 1fr));
+        gap: 1.5rem;
+        overflow: visible;
+        padding-bottom: 0;
+    }
+}
+
+
 .avatar {
     position: relative;
     z-index: 1;
@@ -178,10 +274,11 @@ h1, .brand {
 }
 
 .site-footer {
-    padding: 1.5rem;
+    background-color: var(--paper-dark);
+    padding: 2rem;
     color: var(--text-muted);
     font-size: 0.85rem;
-    border-top: 1px solid var(--line);
+    border-top: 2px solid var(--line);
 }
 
 @media (max-width: 600px) {
