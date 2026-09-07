@@ -1,8 +1,8 @@
 # Ano - Portfolio
 
-Landing page portofolio pribadi berbasis **Django**.
+Website portofolio pribadi berbasis **Django** untuk keperluan tugas Pemrograman Berbasis Platform (PBP).
 
----
+--- 
 
 
 Nama : Christiano Hosea Imannuel
@@ -10,6 +10,9 @@ Nama : Christiano Hosea Imannuel
 NPM : 2506615280
 
 Kelas : PBP B
+
+
+---
 
 ### Tugas 1
 
