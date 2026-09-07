@@ -1,34 +1,89 @@
+/* ===== RESET & DASAR ===== */
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
 }
 
-:root {
-    --ink: #1c1917;
-    --paper: #faf6f0;
-    --paper-dark: #fff1dc;
-    --accent: #d95d39;
-    --accent-dark: #a8442a;
-    --line: #e3d9c9;
-    --text-muted: #6b6459;
-    --radius: 4px;
-    --radius-border: 8px;
-    --accent-terracotta: #b34728;
-    --accent-forest: #2b4c3f;
-    --color-border: #585858;
+html {
+    scroll-behavior: smooth;
 }
 
+#profile,
+#projects {
+    scroll-margin-top: 90px;
+}
+
+/* ===== DESIGN SYSTEM ===== */
+:root {
+    /* --- Latar & surface --- */
+    --bg-base: #101010;             
+    --surface: #161616;             
+    --surface-hover: #1e1e1e;       
+    --card-grad: linear-gradient(190deg, #252525 0%, #101010 100%); 
+
+    /* --- Teks --- */
+    --text-primary: #f2f2f2;       
+    --text-secondary: #b3b3b3;      
+    --text-subtle: #7d7d7d;         
+
+    /* --- Border monokrom halus --- */
+    --border: #3d3d3d;              
+    --border-hover: #888888;        
+    --line-soft: rgba(242, 242, 242, 0.08); 
+
+    /* --- Glass --- */
+    --glass-bg: rgba(255, 255, 255, 0.04);
+    --glass-border: rgba(255, 255, 255, 0.10);
+
+    /* --- Aksen monokrom (terang/gelap, bukan warna) --- */
+    --accent: #ffffff;              
+    --accent-strong: #ffffff;
+    --accent-secondary: #888888;    
+    --on-accent: #0a0a0a;           
+    --accent-dark: var(--accent);
+
+    /* --- Glow lembut  --- */
+    --glow-accent: rgba(242, 242, 242, 0.14);
+    --glow-magenta: rgba(255, 255, 255, 0.10);
+
+    /* --- Radius  --- */
+    --radius: 4px;
+    --radius-border: 8px;
+}
+
+/* ===== BASIS DOKUMEN (html/body) ===== */
 body {
-    font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    color: var(--ink);
-    background-color: var(--paper);
+    font-family: "Inter", "Neue Montreal", -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: var(--text-primary);
+    background-color: var(--bg-base);
     line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+}
+
+
+/* ===== Ambient biru kiri, merah kanan, dari atas ke bawah ===== */
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    background-image:
+        /* Biru - kiri */
+        radial-gradient(520px 760px at 2% 12%, rgba(48, 124, 255, 0.16), transparent 55%),
+        radial-gradient(520px 760px at 2% 48%, rgba(48, 124, 255, 0.13), transparent 55%),
+        radial-gradient(520px 760px at 2% 85%, rgba(48, 124, 255, 0.16), transparent 55%),
+        /* Merah - kanan */
+        radial-gradient(520px 760px at 98% 12%, rgba(255, 58, 88, 0.12), transparent 55%),
+        radial-gradient(520px 760px at 98% 48%, rgba(255, 58, 88, 0.10), transparent 55%),
+        radial-gradient(520px 760px at 98% 85%, rgba(255, 58, 88, 0.12), transparent 55%);
 }
 
 h1,
 .brand {
-    font-family: "Space Grotesk", -apple-system, sans-serif;
+    font-family: "Manrope", "Inter", -apple-system, sans-serif;
 }
 
 .container {
@@ -37,8 +92,28 @@ h1,
     padding: 0 1.5rem;
 }
 
+@media (max-width: 600px) {
+    body::before {
+        display: none;
+    }
+
+    /* kolom cahaya tipis di kiri-kanan, membentang penuh tinggi halaman */
+    body {
+        background-image:
+            linear-gradient(90deg,  rgba(48, 124, 255, 0.05), transparent 14%),
+            linear-gradient(270deg, rgba(255, 58, 88, 0.045), transparent 14%);
+    }
+}
+
+/* ===== HEADER / NAVBAR (sticky) ===== */
 .site-header {
-    border-bottom: 1px solid var(--line);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background-color: rgba(16, 16, 16, 0.55);
+    -webkit-backdrop-filter: blur(15px) saturate(140%);
+    backdrop-filter: blur(15px) saturate(140%);
+    border-bottom: 1px solid rgba(242, 242, 242, 0.08);
 }
 
 .site-header .container {
@@ -51,8 +126,10 @@ h1,
 .brand {
     font-size: 1.3rem;
     font-weight: 700;
-    color: var(--ink);
+    color: var(--text-primary);
     text-decoration: none;
+    font-family: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+    letter-spacing: 0.03em;
 }
 
 .site-header nav {
@@ -61,11 +138,17 @@ h1,
 }
 
 .site-header nav a {
-    color: var(--ink);
+    color: var(--text-secondary);
     text-decoration: none;
     font-size: 0.95rem;
+    transition: color 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
 }
 
+.site-header nav a:hover {
+    color: var(--text-primary);
+}
+
+/* ===== HERO / PROFIL (identitas, bio, sosmed) ===== */
 .hero {
     padding: 3rem 0 3rem;
 }
@@ -99,10 +182,19 @@ h1,
 .hero-identity h1 {
     font-size: clamp(3rem, 7vw, 5rem);
     line-height: 0.95;
+    text-shadow: 0 5px 18px rgba(242, 242, 242, 0.10);
+}
+
+/* Aksen serif */
+.hero-identity h1 em {
+    font-family: "Gloock", Georgia, "Times New Roman", serif;
+    font-style: italic;
+    font-weight: 400;
+    text-shadow: 0 5px 18px rgba(242, 242, 242, 0.12);
 }
 
 .bio {
-    color: var(--text-muted);
+    color: var(--text-secondary);
     max-width: 480px;
     margin-bottom: 1.5rem;
 }
@@ -117,7 +209,7 @@ h1,
     font-size: 0.75rem;
     text-transform: uppercase;
     letter-spacing: 0.06em;
-    color: var(--text-muted);
+    color: var(--text-secondary);
     margin-bottom: 0.15rem;
 }
 
@@ -138,15 +230,18 @@ h1,
     font-size: 0.85rem;
     font-weight: 600;
     text-decoration: none;
-    color: var(--paper);
-    background-color: var(--ink);
+    color: var(--text-primary);
+    background-color: var(--glass-bg);
+    border: 1px solid rgba(242, 242, 242, 0.14);
     border-radius: var(--radius);
     padding: 0.5rem 1.1rem;
-    transition: background-color 0.2s ease;
+    transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
 }
 
 .social-link:hover {
-    background-color: var(--accent);
+    color: var(--text-primary);
+    border-color: var(--border-hover);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
 }
 
 .social-link img {
@@ -154,131 +249,6 @@ h1,
     height: 1rem;
     filter: invert(1);
     flex-shrink: 0;
-}
-
-.hero-photo {
-    grid-area: photo;
-    align-self: center;
-    position: relative;
-}
-
-.photo-block {
-    position: absolute;
-    top: 1.25rem;
-    left: 1.25rem;
-    width: 100%;
-    height: 100%;
-    background-color: var(--accent);
-    border-radius: var(--radius);
-    z-index: 0;
-}
-
-.projects {
-    position: relative;
-    isolation: isolate;
-    background-color: var(--paper-dark);
-    padding: 2rem 0 4rem;
-}
-
-.projects::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    z-index: -1;
-    background:
-        linear-gradient(to bottom, var(--paper) 0%, var(--paper-dark) 100%) top center / 100% 6rem no-repeat;
-}
-
-.projects-title {
-    font-family: "Space Grotesk", sans-serif;
-    font-size: 2rem;
-    margin-bottom: 1.5rem;
-}
-
-/* Kartu */
-.portfolio-card {
-    background-color: var(--paper);
-    border: 2.5px solid var(--color-border);
-    border-radius: var(--radius-border);
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
-}
-
-.portfolio-title {
-    color: var(--ink);
-    padding: 1rem 1rem 0rem 1rem;
-    font-family: "Space Grotesk", sans-serif;
-    font-size: 1.1rem;
-    font-weight: 700;
-    margin: 0;
-}
-
-.portfolio-img {
-    width: 100%;
-    aspect-ratio: 16 / 9;
-    /* foto persegi 1:1 */
-    object-fit: cover;
-    display: block;
-}
-
-.portfolio-desc {
-    padding: 0rem 1rem 1rem;
-    color: var(--ink);
-    font-size: 0.9rem;
-    margin: 0;
-}
-
-/* ===== HP: 1 kartu per layar, geser horizontal (snap) ===== */
-.portfolio-track {
-    display: flex;
-    gap: 0.5rem;
-    overflow-y: auto;
-    scroll-snap-type: y mandatory;
-    padding-bottom: 0.5rem;
-    scrollbar-width: 1px;
-    /* sembunyikan scrollbar biar bersih */
-}
-
-.portfolio-track::-webkit-scrollbar {
-    display: none;
-}
-
-.portfolio-card {
-    flex: 0 0 100%;
-    scroll-snap-align: center;
-}
-
-/* ===== Laptop: 3-4 kartu sebaris, lebih dari itu wrap ke bawah ===== */
-@media (min-width: 760px) {
-    .portfolio-track {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(425px, 1fr));
-        gap: 1.5rem;
-        overflow: visible;
-        padding-bottom: 0;
-    }
-}
-
-
-.avatar {
-    position: relative;
-    z-index: 1;
-    display: block;
-    width: 100%;
-    aspect-ratio: 1 / 1;
-    object-fit: cover;
-    border-radius: var(--radius);
-    border: 3px solid var(--ink);
-}
-
-.site-footer {
-    background-color: var(--paper-dark);
-    padding: 2rem;
-    color: var(--text-muted);
-    font-size: 0.85rem;
-    border-top: 2px solid var(--line);
 }
 
 @media (max-width: 600px) {
@@ -297,4 +267,240 @@ h1,
     .social-links {
         justify-content: flex-start;
     }
+}
+
+/* ===== FOTO HERO / AVATAR (hover/tap/fokus) ===== */
+.hero-photo {
+    grid-area: photo;
+    align-self: center;
+    position: relative;
+    color: var(--text-primary);
+    position: relative;
+    z-index: 0;
+    transition:
+        transform 0.25s ease,
+        box-shadow 0.25s ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .hero-photo:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 14px 30px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(242, 242, 242, 0.12);
+        z-index: 1;
+    }
+}
+
+.hero-photo:active {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+}
+
+@media (max-width: 600px) {
+    .hero-photo {
+        transition: transform 0.25s ease;
+    }
+
+    .hero-photo.tapped {
+        transform: translateY(-2px);
+        box-shadow: 0 0 24px rgba(242, 242, 242, 0.08);
+        z-index: 1;
+    }
+}
+
+.hero-photo:focus-visible {
+    outline: 3px solid var(--accent);
+    /* keyboard focus */
+    outline-offset: 3px;
+}
+
+.photo-block {
+    position: absolute;
+    top: 1.25rem;
+    left: 1.25rem;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(180deg, #212121 0%, #161616 100%);
+    box-shadow: inset 0 0 0 1px rgba(242, 242, 242, 0.05);
+    border-radius: var(--radius);
+    z-index: 0;
+}
+
+/* ===== SECTION PROJECTS (judul + track) ===== */
+.projects {
+    position: relative;
+    isolation: isolate;
+    background-color: var(--surface);
+    padding: 2rem 0 4rem;
+}
+
+.projects::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background:
+        linear-gradient(to bottom, var(--bg-base) 0%, var(--surface) 100%) top center / 100% 6rem no-repeat;
+}
+
+.projects-title {
+    font-family: "Manrope", "Inter", -apple-system, sans-serif;
+    font-size: 2rem;
+    margin-bottom: 1.5rem;
+    text-shadow: 0 4px 14px rgba(242, 242, 242, 0.08);
+}
+
+/* ===== KARTU PROYEK (Perry: outline, glare, card) ===== */
+.project-card-outline {
+    padding: 8px;
+    border-radius: 24px;
+    background: rgba(255, 255, 255, 0.04);
+    outline: 1px solid rgba(255, 255, 255, 0.08);
+    outline-offset: -1px;
+    position: relative;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transition: transform 0.4s cubic-bezier(0.165, 0.84, 0.44, 1),
+        box-shadow 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+
+.glare-item-top {
+    position: absolute;
+    top: 0;
+    left: 16px;
+    right: 16px;
+    height: 1px;
+    pointer-events: none;
+    background-image: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.9), transparent);
+}
+
+.project-card {
+    background: linear-gradient(190deg, #252525, #101010);
+    border: 1px solid #3d3d3d;
+    border-radius: 16px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    width: 100%;
+    min-width: 0;
+    text-decoration: none;
+    color: var(--text-primary);
+    position: relative;
+    z-index: 0;
+    transition: border-color 0.4s cubic-bezier(0.165, 0.84, 0.44, 1),
+        box-shadow 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+
+/* Hover */
+@media (hover: hover) {
+    .project-card-outline:hover {
+        transform: translateY(-6px);
+        box-shadow: 0 14px 30px rgba(0, 0, 0, 0.5);
+    }
+    .project-card-outline:hover .project-card {
+        border-color: #888888;
+    }
+}
+
+/* Kartu aktif di carousel HP */
+.project-card.is-active {
+    border: 3px solid rgba(242, 242, 242, 0.6);
+    box-shadow: 0 0 0 1px rgba(242, 242, 242, 0.12), 0 10px 24px rgba(0, 0, 0, 0.5);
+    z-index: 1;
+}
+
+/* Pop-up kartu tengah di carousel HP */
+.project-card-outline.is-active {
+    transform: translateY(-6px) scale(1.02);
+    z-index: 2;
+}
+
+.project-card:focus-visible {
+    outline: 3px solid rgba(242, 242, 242, 0.6);
+    outline-offset: 3px;
+}
+
+/* ===== KONTEN KARTU (gambar, judul, deskripsi) ===== */
+.portfolio-title {
+    color: var(--text-primary);
+    padding: 1rem 1rem 0rem 1rem;
+    font-family: "Manrope", "Inter", -apple-system, sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin: 0;
+}
+
+.portfolio-img {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+    display: block;
+}
+
+.portfolio-desc {
+    padding: 0rem 1rem 1rem;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+/* ===== HP: 1 kartu per layar, geser horizontal (snap) ===== */
+.portfolio-track {
+    display: flex;
+    gap: 0.5rem;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    padding: 24px 3px 28px;
+    scrollbar-width: 1px;
+}
+
+.portfolio-track::-webkit-scrollbar {
+    display: none;
+}
+
+.project-card-outline {
+    flex: 0 0 85%;
+    scroll-snap-align: center;
+}
+
+/* ===== RESPONSIVE (desktop) ===== */
+@media (min-width: 760px) {
+    .portfolio-track {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(425px, 1fr));
+        gap: 1.5rem;
+        overflow: visible;
+        padding-bottom: 0;
+    }
+}
+
+.avatar {
+    position: relative;
+    z-index: 1;
+    display: block;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    object-fit: cover;
+    border-radius: var(--radius);
+    border: 3px solid rgba(242, 242, 242, 0.22);
+}
+
+/* ===== FOOTER ===== */
+.site-footer {
+    background-color: var(--surface);
+    padding: 2rem;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    border-top: 2px solid var(--line-soft);
+}
+
+/* ===== FONT (JetBrains Mono) ===== */
+.hero-kicker,
+.meta-row dt,
+.meta-row dd {
+    font-family: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+    letter-spacing: 0.04em;
 }
