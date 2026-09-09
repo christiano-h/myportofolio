@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ano - Portfolio</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&family=Gloock&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+
+
+<body>
+    <header class="site-header">
+        <div class="container">
+            <a href="{% url 'main:show_main' %}" class="brand">{{ name }}</a>
+            <nav>
+                <a href="{% url 'main:show_main' %}">Profile</a>
+                <a href="{% url 'main:show_experience' %}">Experience</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <section class="experience-section" id="experience">
+            <div class="container">
+                <h1>Experience</h1>
+                <div class="portfolio-track" aria-label="Experience">
+                    {% for exp in experience_list %}
+                    <div class="project-card-outline">
+                        <a href="{% url 'main:show_experience_detail' exp.pk %}" class="project-card-link">
+                            <article class="portfolio-card project-card">
+                                {% if exp.thumbnail %}
+                                <img class="portfolio-img" src="{{ exp.thumbnail }}" alt="{{ exp.title }}">
+                                {% endif %}
+                                <h3 class="portfolio-title">{{ exp.title }}</h3>
+                                <p class="portfolio-desc">{{ exp.summary }}</p>
+                            </article>
+                        </a>
+                    </div>
+                    {% empty %}
+                    <p>Belum ada pengalaman yang ditambahkan.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </section>
+    </main>
+
+
+    <footer class="site-footer">
+        <div class="container">
+            <p>&copy; 2026 {{ name }}. Fakultas Ilmu Komputer, Universitas Indonesia.</p>
+        </div>
+    </footer>
+
+</body>
+
+</html>

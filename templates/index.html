@@ -7,7 +7,9 @@
     <title>Ano - Portfolio</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&family=Gloock&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&family=Gloock&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
 
@@ -15,10 +17,10 @@
 <body>
     <header class="site-header">
         <div class="container">
-            <a href="#profile" class="brand">Christiano Hosea Imannuel</a>
+            <a href="{% url 'main:show_main' %}" class="brand">{{ name }}</a>
             <nav>
-                <a href="#projects">Projects</a>
-                <a href="#profile">Profile</a>
+                <a href="{% url 'main:show_main' %}">Profile</a>
+                <a href="{% url 'main:show_experience' %}">Experience</a>
             </nav>
         </div>
     </header>
@@ -35,16 +37,15 @@
                     <img class="avatar" src="static/css/img/kepo-ini-orang-ganteng.jpg" alt="Ano's Avatar">
                 </div>
                 <div class="hero-details">
-                    <p class="bio">Halo semuanya :D Selamat datang di website apapun ini terserah presepsi kalian, maaf
-                        yah gak sebagus punya kalian. Makasih sudah ngestalk sampai sini (づ◡﹏◡)づ</p>
+                    <p class="bio">{{ bio }}</p>
                     <dl class="meta-list">
                         <div class="meta-row">
                             <dt>NPM</dt>
-                            <dd>2506615280</dd>
+                            <dd>{{ npm }}</dd>
                         </div>
                         <div class="meta-row">
                             <dt>Program</dt>
-                            <dd>S1 Ilmu Komputer</dd>
+                            <dd>{{ study_program }}</dd>
                         </div>
                     </dl>
                     <div class="social-links"> <!--Ini saya sengaja menambahkan logo dari masing-masing tombol-->
@@ -73,7 +74,8 @@
                         <span class="glare-item-top"></span>
                         <article class="portfolio-card project-card">
                             <span class="glare-item-top"></span>
-                            <img class="portfolio-img" src="static/css/img/daftar_sintaks.jpg" alt="Thumbnail Project 1">
+                            <img class="portfolio-img" src="static/css/img/daftar_sintaks.jpg"
+                                alt="Thumbnail Project 1">
                             <h3 class="portfolio-title">SINTAKS</h3>
                             <p class="portfolio-desc">Ayooo semua daftar sintaks</p>
                         </article>
@@ -103,7 +105,7 @@
 
     <footer class="site-footer">
         <div class="container">
-            <p>&copy; 2026 Ano. Fakultas Ilmu Komputer, Universitas Indonesia.</p>
+            <p>&copy; 2026 {{ name }}. Fakultas Ilmu Komputer, Universitas Indonesia.</p>
         </div>
     </footer>
 
@@ -120,7 +122,7 @@
             });
         })();
 
-                (function () {
+        (function () {
             var track = document.querySelector('.portfolio-track');
             if (!track) return;
             var cards = [].slice.call(track.querySelectorAll('.portfolio-card'));

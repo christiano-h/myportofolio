@@ -17,30 +17,30 @@ html {
 /* ===== DESIGN SYSTEM ===== */
 :root {
     /* --- Latar & surface --- */
-    --bg-base: #101010;             
-    --surface: #161616;             
-    --surface-hover: #1e1e1e;       
-    --card-grad: linear-gradient(190deg, #252525 0%, #101010 100%); 
+    --bg-base: #101010;
+    --surface: #161616;
+    --surface-hover: #1e1e1e;
+    --card-grad: linear-gradient(190deg, #252525 0%, #101010 100%);
 
     /* --- Teks --- */
-    --text-primary: #f2f2f2;       
-    --text-secondary: #b3b3b3;      
-    --text-subtle: #7d7d7d;         
+    --text-primary: #f2f2f2;
+    --text-secondary: #b3b3b3;
+    --text-subtle: #7d7d7d;
 
     /* --- Border monokrom halus --- */
-    --border: #3d3d3d;              
-    --border-hover: #888888;        
-    --line-soft: rgba(242, 242, 242, 0.08); 
+    --border: #3d3d3d;
+    --border-hover: #888888;
+    --line-soft: rgba(242, 242, 242, 0.08);
 
     /* --- Glass --- */
     --glass-bg: rgba(255, 255, 255, 0.04);
     --glass-border: rgba(255, 255, 255, 0.10);
 
     /* --- Aksen monokrom (terang/gelap, bukan warna) --- */
-    --accent: #ffffff;              
+    --accent: #ffffff;
     --accent-strong: #ffffff;
-    --accent-secondary: #888888;    
-    --on-accent: #0a0a0a;           
+    --accent-secondary: #888888;
+    --on-accent: #0a0a0a;
     --accent-dark: var(--accent);
 
     /* --- Glow lembut  --- */
@@ -60,6 +60,10 @@ body {
     line-height: 1.6;
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
+    /* Sticky footer: tinggi minimal satu layar + kolom flex */
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
 }
 
 
@@ -100,7 +104,7 @@ h1,
     /* kolom cahaya tipis di kiri-kanan, membentang penuh tinggi halaman */
     body {
         background-image:
-            linear-gradient(90deg,  rgba(48, 124, 255, 0.05), transparent 14%),
+            linear-gradient(90deg, rgba(48, 124, 255, 0.05), transparent 14%),
             linear-gradient(270deg, rgba(255, 58, 88, 0.045), transparent 14%);
     }
 }
@@ -330,7 +334,7 @@ h1,
     position: relative;
     isolation: isolate;
     background-color: var(--surface);
-    padding: 2rem 0 4rem;
+    padding: 1rem 0 1rem;
 }
 
 .projects::before {
@@ -345,7 +349,7 @@ h1,
 .projects-title {
     font-family: "Manrope", "Inter", -apple-system, sans-serif;
     font-size: 2rem;
-    margin-bottom: 1.5rem;
+    margin-bottom: 0rem;
     text-shadow: 0 4px 14px rgba(242, 242, 242, 0.08);
 }
 
@@ -399,6 +403,7 @@ h1,
         transform: translateY(-6px);
         box-shadow: 0 14px 30px rgba(0, 0, 0, 0.5);
     }
+
     .project-card-outline:hover .project-card {
         border-color: #888888;
     }
@@ -466,6 +471,38 @@ h1,
     scroll-snap-align: center;
 }
 
+/* ===== SECTION EXPERIENCE (judul + track) ===== */
+
+.experience-section {
+    padding: 1rem 0;
+    border-top: 1px solid var(--line-soft);
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.experience-section h1 {
+    font-size: 2rem;
+}
+
+.experience-section .container {
+    align-self: center;
+    width: 100%;
+    max-width: 960px;
+}
+
+.project-card-link {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    text-decoration: none;
+    color: inherit;
+}
+
 /* ===== RESPONSIVE (desktop) ===== */
 @media (min-width: 760px) {
     .portfolio-track {
@@ -473,7 +510,12 @@ h1,
         grid-template-columns: repeat(auto-fill, minmax(425px, 1fr));
         gap: 1.5rem;
         overflow: visible;
-        padding-bottom: 0;
+    }
+
+    /* Experience: override track khusus halaman ini */
+    .experience-section .portfolio-track {
+        grid-template-columns: repeat(auto-fit, minmax(425px, 1fr));
+        gap: 1rem;
     }
 }
 
@@ -503,4 +545,29 @@ h1,
 .meta-row dd {
     font-family: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
     letter-spacing: 0.04em;
+}
+
+/* main menyerap sisa tinggi supaya footer terdorong ke bawah */
+main {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+}
+
+/* HP: kartu Experience tersusun vertikal (bukan carousel geser) */
+@media (max-width: 760px) {
+    .experience-section .portfolio-track {
+        display: flex;
+        flex-direction: column;
+        overflow: visible;
+        scroll-snap-type: none;
+        padding: 8px 0 16px;
+    }
+
+    .experience-section .project-card-outline {
+        flex: none;
+        width: 100%;
+        max-width: none;
+        scroll-snap-align: none;
+    }
 }
