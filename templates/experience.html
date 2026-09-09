@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ name }} - Portfolio</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&family=Gloock&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+
+
+<body>
+    <header class="site-header">
+        <div class="container">
+            <a href="{% url 'main:show_main' %}" class="brand">{{ name }}</a>
+            <nav>
+                <nav>
+                    <a href="{% url 'main:show_main' %}">Profile</a>
+                    <a href="{% url 'main:show_experience' %}">Experience</a>
+                </nav>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <section class="experience-section" id="experience">
+            <div class="container">
+                <p class="section-kicker">Perjalanan saya sejauh ini</p>
+                <h1>Experience</h1>
+
+                <div class="experience-grid">
+                    {% for experience in experience_list %}
+                    <article class="experience-card">
+                        <span class="experience-category">
+                            {{ experience.get_category_display }}
+                        </span>
+                        <h2>{{ experience.title }}</h2>
+                        <p class="experience-description">
+                            {{ experience.description }}
+                        </p>
+
+                        {% if experience.is_ongoing %}
+                        <p class="experience-status">Sedang berlangsung</p>
+                        {% else %}
+                        <p class="experience-status">Selesai</p>
+                        {% endif %}
+                    </article>
+                    {% empty %}
+                    <p class="empty-state">
+                        Belum ada pengalaman yang ditambahkan.
+                    </p>
+                    {% endfor %}
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="site-footer">
+        <div class="container">
+            <p>&copy; 2026 {{ name }}. Fakultas Ilmu Komputer, Universitas Indonesia.</p>
+        </div>
+    </footer>
+
+    <script>
+        (function () {
+            var photo = document.querySelector('.hero-photo');
+            if (!photo) return;
+            photo.addEventListener('click', function () {
+                photo.classList.add('tapped');
+                clearTimeout(photo._t);
+                photo._t = setTimeout(function () {
+                    photo.classList.remove('tapped');
+                }, 200);
+            });
+        })();
+
+        (function () {
+            var track = document.querySelector('.portfolio-track');
+            if (!track) return;
+            var cards = [].slice.call(track.querySelectorAll('.portfolio-card'));
+            if (!cards.length) return;
+
+            function update() {
+                // Carousel hanya aktif kalau isinya overflow (bisa digeser)
+                var isCarousel = track.scrollWidth > track.clientWidth + 1;
+                if (!isCarousel) {
+                    cards.forEach(function (c) {
+                        c.classList.remove('is-active');
+                        var outline = c.closest('.project-card-outline');
+                        if (outline) outline.classList.remove('is-active');
+                    });
+                    return;
+                }
+                // Cari kartu yang paling dekat ke tengah track
+                var rect = track.getBoundingClientRect();
+                var center = rect.left + rect.width / 2;
+                var best = cards[0], bestDist = Infinity;
+                cards.forEach(function (card) {
+                    var r = card.getBoundingClientRect();
+                    var dist = Math.abs((r.left + r.width / 2) - center);
+                    if (dist < bestDist) { bestDist = dist; best = card; }
+                });
+                cards.forEach(function (c) {
+                    var active = c === best;
+                    c.classList.toggle('is-active', active);
+                    var outline = c.closest('.project-card-outline');
+                    if (outline) outline.classList.toggle('is-active', active);
+                });
+            }
+
+            var ticking = false;
+            track.addEventListener('scroll', function () {
+                if (!ticking) {
+                    requestAnimationFrame(function () { update(); ticking = false; });
+                    ticking = true;
+                }
+            }, { passive: true });
+
+            window.addEventListener('resize', update);
+            window.addEventListener('load', update);
+            update();
+        })();
+    </script>
+
+</body>
+
+</html>
