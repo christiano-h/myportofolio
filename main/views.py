@@ -1,6 +1,6 @@
 from django.shortcuts import get_object_or_404, render
 
-from main.models import Experience
+from main.models import Experience, Project
 
 
 def show_main(request):
@@ -9,6 +9,7 @@ def show_main(request):
         "npm": "2506615280",
         "study_program": "S1 Ilmu Komputer",
         "bio": "Iya ini bio, gatau mau nulis apa soalnya abis dihujat sama Yasmin. Jadi yaudah sekarang gini aja deh :d (Yasmin jahat)",
+        "project_list": Project.objects.all(),
     }
     return render(request, "index.html", context)
 

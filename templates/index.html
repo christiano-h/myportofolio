@@ -70,34 +70,21 @@
             <div class="container">
                 <h1 class="projects-title">Projects</h1>
                 <div class="portfolio-track" aria-label="Portofolio">
+                    {% for project in project_list %}
                     <div class="project-card-outline">
                         <span class="glare-item-top"></span>
                         <article class="portfolio-card project-card">
                             <span class="glare-item-top"></span>
-                            <img class="portfolio-img" src="static/css/img/daftar_sintaks.jpg"
-                                alt="Thumbnail Project 1">
-                            <h3 class="portfolio-title">SINTAKS</h3>
-                            <p class="portfolio-desc">Ayooo semua daftar sintaks</p>
+                            {% if project.thumbnail %}
+                            <img class="portfolio-img" src="{{ project.thumbnail }}" alt="{{ project.title }}">
+                            {% endif %}
+                            <h3 class="portfolio-title">{{ project.title }}</h3>
+                            <p class="portfolio-desc">{{ project.description }}</p>
                         </article>
                     </div>
-                    <div class="project-card-outline">
-                        <span class="glare-item-top"></span>
-                        <article class="portfolio-card project-card">
-                            <span class="glare-item-top"></span>
-                            <img class="portfolio-img" src="static/css/img/fish_gif.gif" alt="Thumbnail Project 1">
-                            <h3 class="portfolio-title">Ini ikan apa?</h3>
-                            <p class="portfolio-desc">OMG!!! ADA IKANNNN</p>
-                        </article>
-                    </div>
-                    <div class="project-card-outline">
-                        <span class="glare-item-top"></span>
-                        <article class="portfolio-card project-card">
-                            <span class="glare-item-top"></span>
-                            <img class="portfolio-img" src="static/css/img/skuba.png" alt="Thumbnail Project 1">
-                            <h3 class="portfolio-title">SCUBAAAAA</h3>
-                            <p class="portfolio-desc">SCUBA...SCUBA...SCUBA</p>
-                        </article>
-                    </div>
+                    {% empty %}
+                    <p>Belum ada proyek untuk ditampilkan.</p>
+                    {% endfor %}
                 </div>
             </div>
         </section>

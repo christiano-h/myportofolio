@@ -14,7 +14,7 @@
 </head>
 
 
-<body>
+<body class="experience-page">
     <header class="site-header">
         <div class="container">
             <a href="{% url 'main:show_main' %}" class="brand">{{ name }}</a>
@@ -32,8 +32,10 @@
                 <div class="portfolio-track" aria-label="Experience">
                     {% for exp in experience_list %}
                     <div class="project-card-outline">
+                        <span class="glare-item-top"></span>
                         <a href="{% url 'main:show_experience_detail' exp.pk %}" class="project-card-link">
                             <article class="portfolio-card project-card">
+                                <span class="glare-item-top"></span>
                                 {% if exp.thumbnail %}
                                 <img class="portfolio-img" src="{{ exp.thumbnail }}" alt="{{ exp.title }}">
                                 {% endif %}
@@ -56,6 +58,55 @@
             <p>&copy; 2026 {{ name }}. Fakultas Ilmu Komputer, Universitas Indonesia.</p>
         </div>
     </footer>
+
+    <script>
+        (function () {
+            var sec = document.getElementById('experience');
+            if (!sec) return;
+            var track = sec.querySelector('.portfolio-track');
+            if (!track) return;
+
+            function clear() {
+                var all = sec.querySelectorAll('.is-active');
+                all.forEach(function (el) { el.classList.remove('is-active'); });
+            }
+
+            function apply() {
+                // Desktop (grid): biarkan glare hanya dari hover
+                if (window.innerWidth >= 760) { clear(); return; }
+
+                var cards = [].slice.call(track.querySelectorAll('.project-card-outline'));
+                if (!cards.length) return;
+
+                var tr = track.getBoundingClientRect();
+                var centerY = tr.top + tr.height / 2;
+                var best = cards[0], bestD = Infinity;
+                cards.forEach(function (c) {
+                    var r = c.getBoundingClientRect();
+                    var d = Math.abs((r.top + r.height / 2) - centerY);
+                    if (d < bestD) { bestD = d; best = c; }
+                });
+
+                clear();
+                best.classList.add('is-active');
+                var inner = best.querySelector('.project-card');
+                if (inner) inner.classList.add('is-active');
+            }
+
+            var ticking = false;
+            function onScroll() {
+                if (!ticking) {
+                    ticking = true;
+                    requestAnimationFrame(function () { apply(); ticking = false; });
+                }
+            }
+
+            track.addEventListener('scroll', onScroll, { passive: true });
+            window.addEventListener('resize', apply);
+            window.addEventListener('load', apply);
+            apply();
+        })();
+    </script>
 
 </body>
 

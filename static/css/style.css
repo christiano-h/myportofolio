@@ -96,7 +96,7 @@ h1,
     padding: 0 1.5rem;
 }
 
-@media (max-width: 600px) {
+@media (max-width: 720px) {
     body::before {
         display: none;
     }
@@ -255,7 +255,7 @@ h1,
     flex-shrink: 0;
 }
 
-@media (max-width: 600px) {
+@media (max-width: 720px) {
     .hero-grid {
         grid-template-columns: 1fr;
         grid-template-areas:
@@ -299,7 +299,7 @@ h1,
     box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
 }
 
-@media (max-width: 600px) {
+@media (max-width: 720px) {
     .hero-photo {
         transition: transform 0.25s ease;
     }
@@ -451,24 +451,40 @@ h1,
     margin: 0;
 }
 
-/* ===== HP: 1 kartu per layar, geser horizontal (snap) ===== */
+/* ===== KARTU: default desktop (grid) ===== */
 .portfolio-track {
-    display: flex;
-    gap: 0.5rem;
-    overflow-x: auto;
-    overflow-y: hidden;
-    scroll-snap-type: x mandatory;
-    padding: 24px 3px 28px;
-    scrollbar-width: 1px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(425px, 1fr));
+    gap: 1.5rem;
+    overflow: visible;
 }
 
-.portfolio-track::-webkit-scrollbar {
-    display: none;
+/* Experience: override track di desktop */
+.experience-section .portfolio-track {
+    grid-template-columns: repeat(auto-fit, minmax(425px, 1fr));
+    gap: 1rem;
 }
 
-.project-card-outline {
-    flex: 0 0 85%;
-    scroll-snap-align: center;
+/* ===== HP: carousel geser horizontal (snap) ===== */
+@media (max-width: 720px) {
+    .portfolio-track {
+        display: flex;
+        gap: 0.5rem;
+        overflow-x: auto;
+        overflow-y: hidden;
+        scroll-snap-type: x mandatory;
+        padding: 28px 3px 28px;
+        scrollbar-width: 1px;
+    }
+
+    .portfolio-track::-webkit-scrollbar {
+        display: none;
+    }
+
+    .project-card-outline {
+        flex: 0 0 85%;
+        scroll-snap-align: center;
+    }
 }
 
 /* ===== SECTION EXPERIENCE (judul + track) ===== */
@@ -483,6 +499,8 @@ h1,
 }
 
 .experience-section h1 {
+    padding-bottom: 8px;
+    align-self: center;
     font-size: 2rem;
 }
 
@@ -503,21 +521,7 @@ h1,
     color: inherit;
 }
 
-/* ===== RESPONSIVE (desktop) ===== */
-@media (min-width: 760px) {
-    .portfolio-track {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(425px, 1fr));
-        gap: 1.5rem;
-        overflow: visible;
-    }
-
-    /* Experience: override track khusus halaman ini */
-    .experience-section .portfolio-track {
-        grid-template-columns: repeat(auto-fit, minmax(425px, 1fr));
-        gap: 1rem;
-    }
-}
+/* ===== RESPONSIVE (desktop) sudah menjadi default di atas ===== */
 
 .avatar {
     position: relative;
@@ -554,20 +558,93 @@ main {
     flex-direction: column;
 }
 
-/* HP: kartu Experience tersusun vertikal (bukan carousel geser) */
-@media (max-width: 760px) {
-    .experience-section .portfolio-track {
+/* HP: Experience = carousel vertikal dalam wadah (footer tetap terlihat) */
+@media (max-width: 720px) {
+    .experience-section {
+        justify-content: flex-start;
+        min-height: 0;
+        overflow: hidden;
+    }
+
+    .experience-section .container {
+        flex: 1 1 auto;
+        min-height: 0;
         display: flex;
         flex-direction: column;
-        overflow: visible;
-        scroll-snap-type: none;
-        padding: 8px 0 16px;
+    }
+
+    .experience-section h1 {
+        flex: 0 0 auto;
+    }
+
+    .experience-section .portfolio-track {
+        flex: 1 1 auto;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        overflow-y: auto;
+        overflow-x: hidden;
+        scroll-snap-type: y proximity;
+        padding: 30px 6px 40px;
+        scrollbar-width: none;
+        /* fade halus di tepi atas & bawah */
+        -webkit-mask-image: linear-gradient(to bottom, transparent, #000 20%, #000 80%, transparent);
+        mask-image: linear-gradient(to bottom, transparent, #000 20%, #000 80%, transparent);
+    }
+
+    .experience-section .portfolio-track::-webkit-scrollbar {
+        display: none;
     }
 
     .experience-section .project-card-outline {
         flex: none;
         width: 100%;
         max-width: none;
-        scroll-snap-align: none;
+        scroll-snap-align: center;
+    }
+}
+
+/* ===== GLARE = garis-atas (silhouette): hanya tampil saat hover/dominan ===== */
+.glare-item-top {
+    opacity: 0;
+    transition: opacity 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+
+.project-card-outline:hover .glare-item-top,
+.project-card-outline.is-active .glare-item-top {
+    opacity: 1;
+}
+
+/* Matikan visual "menyala" border agar hanya garis-atas yang tampil */
+.project-card.is-active {
+    border: 1px solid #3d3d3d;
+    box-shadow: none;
+}
+
+.project-card-outline.is-active {
+    transform: translateY(-6px);
+    /* angkat ringan, tanpa scale/glow */
+}
+
+/* HP: kartu Experience dominan terangkat sedikit */
+@media (max-width: 720px) {
+    .experience-section .project-card-outline.is-active {
+        transform: scale(1.03);
+    }
+}
+
+/* ===== Halaman Experience HP: kunci tinggi (footer terlihat, hanya carousel yg scroll) ===== */
+@media (max-width: 720px) {
+    body.experience-page {
+        height: 100vh;
+        height: 100dvh;
+        overflow: hidden;
+    }
+
+    body.experience-page main {
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow: hidden;
     }
 }
