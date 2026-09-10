@@ -7,5 +7,5 @@ app_name = "main"
 urlpatterns = [
     path("", show_main, name="show_main"),
     path("experience/", show_experience, name="show_experience"),
-    path("experience/<title>/", show_experience_detail, name="show_experience_detail"),
+    path("experience/<uuid:pk>/", show_experience_detail, name="show_experience_detail"),
 ]

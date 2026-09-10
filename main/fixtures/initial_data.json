@@ -1,0 +1,81 @@
+[
+{
+  "model": "main.experience",
+  "pk": "4307d732-8c14-4c09-b028-ad01ab320dd9",
+  "fields": {
+    "title": "Project Officer — Spiritual Retreat SMAN 1 Jakarta",
+    "category": "volunteer",
+    "thumbnail": "/static/css/img/retreat.JPEG",
+    "summary": "Merancang jadwal dan mengoordinasikan seluruh kegiatan retret agar berjalan lancar.",
+    "content": null,
+    "started_at": "2026-09-09T10:41:00.223Z",
+    "ended_at": null
+  }
+},
+{
+  "model": "main.experience",
+  "pk": "bf5b3a7b-d659-420a-9a40-264526226722",
+  "fields": {
+    "title": "Wakil Ketua Seksi Publikasi & Dokumentasi — SELARAS 5.0",
+    "category": "volunteer",
+    "thumbnail": "/static/css/img/selaras-pdd.jpg",
+    "summary": "Membantu ketua memimpin divisi serta mengawasi seluruh kegiatan publikasi dan dokumentasi festival.",
+    "content": null,
+    "started_at": "2026-09-09T10:41:00.222Z",
+    "ended_at": null
+  }
+},
+{
+  "model": "main.experience",
+  "pk": "d214e396-fcd4-43ef-ba2e-801f1318c88d",
+  "fields": {
+    "title": "Staf Audit Senior — MPK SMAN 1 Jakarta",
+    "category": "volunteer",
+    "thumbnail": "/static/css/img/mpk.jpg",
+    "summary": "Mengumpulkan dan menilai masukan siswa untuk menindaklanjuti berbagai aspirasi mereka.",
+    "content": null,
+    "started_at": "2026-09-09T10:41:00.223Z",
+    "ended_at": null
+  }
+},
+{
+  "model": "main.experience",
+  "pk": "f170e316-e8b6-443d-af36-c4a48edf4344",
+  "fields": {
+    "title": "Staf Dokumentasi & Sinematografi — Open House Fasilkom UI",
+    "category": "volunteer",
+    "thumbnail": "/static/css/img/oh-fasilkom.jpg",
+    "summary": "Meraih penghargaan Best Staff atas kinerja dan kontribusi yang luar biasa.",
+    "content": null,
+    "started_at": "2026-09-09T10:41:00.224Z",
+    "ended_at": null
+  }
+},
+{
+  "model": "main.project",
+  "pk": 1,
+  "fields": {
+    "title": "SINTAKS",
+    "description": "Ayooo semua daftar sintaks",
+    "thumbnail": "/static/css/img/daftar_sintaks.jpg"
+  }
+},
+{
+  "model": "main.project",
+  "pk": 2,
+  "fields": {
+    "title": "Ini ikan apa?",
+    "description": "OMG!!! ADA IKANNNN",
+    "thumbnail": "/static/css/img/fish_gif.gif"
+  }
+},
+{
+  "model": "main.project",
+  "pk": 3,
+  "fields": {
+    "title": "SCUBAAAAA",
+    "description": "SCUBA...SCUBA...SCUBA",
+    "thumbnail": "/static/css/img/skuba.png"
+  }
+}
+]
