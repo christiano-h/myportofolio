@@ -431,7 +431,8 @@ h1,
 .portfolio-title {
     color: var(--text-primary);
     padding: 1rem 1rem 0rem 1rem;
-    font-family: "Manrope", "Inter", -apple-system, sans-serif;
+    font-family: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+    text-transform: uppercase;
     font-size: 1.1rem;
     font-weight: 700;
     margin: 0;
@@ -449,6 +450,23 @@ h1,
     color: var(--text-secondary);
     font-size: 0.9rem;
     margin: 0;
+}
+
+/*  label kecil (jabatan)  */
+.portfolio-kicker {
+    font-family: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent-dark);
+    font-weight: 700;
+    margin: 0 0 0.25rem;
+    padding: 0 0;
+}
+
+/* Di dalam kartu, kicker mengikuti padding kartu */
+.portfolio-card .portfolio-kicker {
+    padding: 0 1rem;
 }
 
 /* ===== KARTU: default desktop (grid) ===== */
@@ -604,6 +622,70 @@ main {
         scroll-snap-align: center;
     }
 }
+
+/* ===== HALAMAN DETAIL (blog) ===== */
+.detail-section {
+    padding: 2.5rem 0 4rem;
+}
+
+.detail-section h1 {
+    font-size: clamp(1.75rem, 4vw, 2.6rem);
+    line-height: 1.15;
+    margin-bottom: 0.5rem;
+    text-shadow: 0 4px 14px rgba(242, 242, 242, 0.08);
+}
+
+.detail-section .portfolio-kicker {
+    margin-bottom: 1.5rem;
+}
+
+/* Thumbnail besar: sudut membulat biar tidak kaku */
+.detail-hero {
+    border-radius: var(--radius-border);
+    border: 1px solid var(--border);
+    margin-bottom: 2rem;
+}
+
+/* Isi blog */
+.detail-body {
+    max-width: 68ch;
+    color: var(--text-secondary);
+    font-size: 1rem;
+    line-height: 1.75;
+}
+
+/* Reset global (* { margin: 0 }) bikin <p> dari linebreaks nempel -> kasih jarak */
+.detail-body p {
+    margin-bottom: 1rem;
+}
+
+.detail-body p:last-child {
+    margin-bottom: 0;
+}
+
+/* Tombol kembali: konsisten dengan .social-link */
+.detail-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 2.5rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-decoration: none;
+    background-color: var(--glass-bg);
+    border: 1px solid rgba(242, 242, 242, 0.14);
+    border-radius: var(--radius);
+    padding: 0.5rem 1.1rem;
+    transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+
+.detail-back:hover {
+    color: var(--text-primary);
+    border-color: var(--border-hover);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
 
 /* ===== GLARE = garis-atas (silhouette): hanya tampil saat hover/dominan ===== */
 .glare-item-top {
