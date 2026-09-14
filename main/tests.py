@@ -184,6 +184,9 @@ class ShowExperienceViewTests(TestCase):
 
 class DetailViewTests(TestCase):
     def setUp(self):
+        # Migrasi 0006 juga men-seed data fixture ke DB test -> bersihkan dulu
+        Experience.objects.all().delete()
+        Project.objects.all().delete()
         self.exp = Experience.objects.create(
             title="SELARAS 5.0", job_title="Wakil Ketua",
             content="Baris pertama.\nBaris kedua.",
