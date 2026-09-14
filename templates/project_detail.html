@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ano - Portfolio</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&family=Gloock&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+
+
+<body class="detail-page">
+    <header class="site-header">
+        <div class="container">
+            <a href="{% url 'main:show_main' %}" class="brand">{{ name }}</a>
+            <nav>
+                <a href="{% url 'main:show_main' %}">Profile</a>
+                <a href="{% url 'main:show_main' %}#projects">Projects</a>
+                <a href="{% url 'main:show_experience' %}">Experience</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <article class="detail-section">
+            <div class="container">
+                <h1>{{ project.title }}</h1>
+
+                {% if project.thumbnail %}
+                <img class="portfolio-img detail-hero" src="{{ project.thumbnail }}" alt="{{ project.title }}">
+                {% endif %}
+
+                <div class="detail-body">
+                    {% if project.content %}
+                    {{ project.content|linebreaks }}
+                    {% elif project.description %}
+                    {{ project.description|linebreaks }}
+                    {% else %}
+                    <p>Belum ada deskripsi untuk proyek ini.</p>
+                    {% endif %}
+                </div>
+
+                <a class="detail-back" href="{% url 'main:show_main' %}#projects">&larr; Kembali ke Projects</a>
+            </div>
+        </article>
+    </main>
+
+
+    <footer class="site-footer">
+        <div class="container">
+            <p>&copy; 2026 {{ name }}. Fakultas Ilmu Komputer, Universitas Indonesia.</p>
+        </div>
+    </footer>
+
+</body>
+
+</html>

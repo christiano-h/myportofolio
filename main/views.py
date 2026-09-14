@@ -1,0 +1,39 @@
+from django.shortcuts import get_object_or_404, render
+
+from main.models import Experience, Project
+
+
+def show_main(request):
+    context = {
+        "name": "Christiano H",
+        "npm": "2506615280",
+        "study_program": "S1 Ilmu Komputer",
+        "bio": "Iya ini bio, gatau mau nulis apa soalnya abis dihujat sama Yasmin. Jadi yaudah sekarang gini aja deh :d (Yasmin jahat)",
+        "project_list": Project.objects.all(),
+    }
+    return render(request, "index.html", context)
+
+
+def show_experience(request):
+    context = {
+        "name": "Christiano H",
+        "experience_list": Experience.objects.all().order_by("-started_at"),
+    }
+    return render(request, "experience.html", context)
+
+
+def show_experience_detail(request, title):
+    experience = get_object_or_404(Experience, title=title)
+    context = {
+        "name": "Christiano H",
+        "experience": experience,
+    }
+    return render(request, "experience_detail.html", context)
+
+def show_project_detail(request, title):
+    project = get_object_or_404(Project, title=title)
+    context = {
+        "name": "Christiano H",
+        "project": project,
+    }
+    return render(request, "project_detail.html", context)
