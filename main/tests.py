@@ -90,6 +90,7 @@ class UrlRoutingTests(TestCase):
 
 class ShowMainViewTests(TestCase):
     def setUp(self):
+        Project.objects.all().delete()
         Project.objects.create(
             title="SINTAKS",
             description="Ayooo semua daftar sintaks",
@@ -131,6 +132,8 @@ class ShowMainViewTests(TestCase):
 
 class ShowExperienceViewTests(TestCase):
     def setUp(self):
+        # Migrasi 0005 (seed RISTEK) juga jalan di DB test -> bersihkan dulu
+        Experience.objects.all().delete()
         self.lama = Experience.objects.create(
             title="Pengalaman Lama", job_title="Staf Audit", summary="Ringkasan lama"
         )
