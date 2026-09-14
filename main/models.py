@@ -14,8 +14,8 @@ class Experience(models.Model):
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     title = models.CharField(max_length=100)
+    job_title = models.CharField(max_length=100, blank=True, null=True)
     category = models.CharField(max_length=20, choices=EXPERIENCE_CHOICES, default='full-time')
-    # Foto/SVG untuk gambar kartu (path static absolut /static/css/img/... atau URL eksternal)
     thumbnail = models.URLField(blank=True, null=True)
     summary = models.TextField(blank=True, null=True)   # teks pendek di kartu
     content = models.TextField(blank=True, null=True)   # isi blog halaman detail
@@ -23,6 +23,8 @@ class Experience(models.Model):
     ended_at = models.DateTimeField(blank=True, null=True)
 
     def __str__(self):
+        if self.job_title:
+            return self.job_title + ' — ' + self.title
         return self.title
 
     @property
@@ -34,6 +36,7 @@ class Project(models.Model):
     title = models.CharField(max_length=100)
     description = models.TextField(blank=True, null=True)
     thumbnail = models.URLField(blank=True, null=True)   # /static/css/img/... atau URL
-
+    content = models.TextField(blank=True, null=True)   # isi blog halaman detail
+    
     def __str__(self):
         return self.title
