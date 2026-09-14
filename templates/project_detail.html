@@ -20,6 +20,7 @@
             <a href="{% url 'main:show_main' %}" class="brand">{{ name }}</a>
             <nav>
                 <a href="{% url 'main:show_main' %}">Profile</a>
+                <a href="{% url 'main:show_main' %}#projects">Projects</a>
                 <a href="{% url 'main:show_experience' %}">Experience</a>
             </nav>
         </div>
@@ -28,25 +29,23 @@
     <main>
         <article class="detail-section">
             <div class="container">
-                <h1>{{ experience.title }}</h1>
+                <h1>{{ project.title }}</h1>
 
-                {% if experience.job_title %}
-                <p class="portfolio-kicker">{{ experience.job_title }}</p>
-                {% endif %}
-
-                {% if experience.thumbnail %}
-                <img class="portfolio-img detail-hero" src="{{ experience.thumbnail }}" alt="{{ experience.title }}">
+                {% if project.thumbnail %}
+                <img class="portfolio-img detail-hero" src="{{ project.thumbnail }}" alt="{{ project.title }}">
                 {% endif %}
 
                 <div class="detail-body">
-                    {% if experience.content %}
-                    {{ experience.content|linebreaks }}
+                    {% if project.content %}
+                    {{ project.content|linebreaks }}
+                    {% elif project.description %}
+                    {{ project.description|linebreaks }}
                     {% else %}
-                    <p>Belum ada deskripsi untuk pengalaman ini.</p>
+                    <p>Belum ada deskripsi untuk proyek ini.</p>
                     {% endif %}
                 </div>
 
-                <a class="detail-back" href="{% url 'main:show_experience' %}">&larr; Kembali ke Experience</a>
+                <a class="detail-back" href="{% url 'main:show_main' %}#projects">&larr; Kembali ke Projects</a>
             </div>
         </article>
     </main>

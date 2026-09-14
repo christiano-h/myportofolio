@@ -22,10 +22,18 @@ def show_experience(request):
     return render(request, "experience.html", context)
 
 
-def show_experience_detail(request, pk):
-    experience = get_object_or_404(Experience, pk=pk)
+def show_experience_detail(request, title):
+    experience = get_object_or_404(Experience, title=title)
     context = {
         "name": "Christiano H",
         "experience": experience,
     }
     return render(request, "experience_detail.html", context)
+
+def show_project_detail(request, title):
+    project = get_object_or_404(Project, title=title)
+    context = {
+        "name": "Christiano H",
+        "project": project,
+    }
+    return render(request, "project_detail.html", context)
