@@ -1,0 +1,63 @@
+{% comment %}
+Komponen modal konfirmasi hapus (Popover API).
+
+Dipakai bersama oleh project & experience supaya markup dan styling-nya tidak
+terduplikasi. Pemakai tidak meng-include file ini langsung, tapi lewat
+`components/project_delete_modal.html` atau
+`components/experience_delete_modal.html`.
+
+Variabel yang wajib diisi:
+  modal_prefix  - awalan id unik, mis. "delete-project"
+  object_id     - primary key objek, dipakai untuk membedakan tiap modal
+  delete_url    - URL tujuan POST penghapusan
+  object_title  - judul objek yang ditampilkan di kalimat konfirmasi
+  trigger_label - teks tombol pembuka, mis. "Hapus Proyek"
+  heading       - judul dialog, mis. "Hapus Proyek?"
+  aria_label    - label aksesibilitas tombol pembuka
+
+Catatan: modal ini butuh Popover API (Chrome 114+, Safari 17+, Firefox 125+).
+Di browser lama, tombol tidak akan membuka apa pun.
+{% endcomment %}
+<p class="experience-status">
+    <button type="button"
+            class="button button-danger"
+            popovertarget="{{ modal_prefix }}-{{ object_id }}"
+            aria-label="{{ aria_label }}"
+            title="{{ aria_label }}">
+        {{ trigger_label }}
+    </button>
+</p>
+<div id="{{ modal_prefix }}-{{ object_id }}"
+     class="delete-modal"
+     popover="auto"
+     role="dialog"
+     aria-modal="true"
+     aria-labelledby="{{ modal_prefix }}-{{ object_id }}-title">
+    <button type="button"
+            class="delete-modal__backdrop"
+            popovertarget="{{ modal_prefix }}-{{ object_id }}"
+            popovertargetaction="hide"
+            aria-label="Tutup konfirmasi hapus"></button>
+    <div class="delete-modal__content">
+        <button type="button"
+                class="delete-modal__close"
+                popovertarget="{{ modal_prefix }}-{{ object_id }}"
+                popovertargetaction="hide"
+                aria-label="Tutup konfirmasi hapus">×</button>
+        <h2 id="{{ modal_prefix }}-{{ object_id }}-title">{{ heading }}</h2>
+        <p>
+            Apakah Anda yakin ingin menghapus
+            <strong>{{ object_title }}</strong>?
+        </p>
+        <form method="post" action="{{ delete_url }}">
+            {% csrf_token %}
+            <div class="delete-modal__actions">
+                <button type="button"
+                        class="button button-secondary"
+                        popovertarget="{{ modal_prefix }}-{{ object_id }}"
+                        popovertargetaction="hide">Batal</button>
+                <button type="submit" class="button button-danger">Ya, Hapus</button>
+            </div>
+        </form>
+    </div>
+</div>

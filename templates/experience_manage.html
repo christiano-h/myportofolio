@@ -1,12 +1,19 @@
 {% extends 'base.html' %}
 
-{% block body_class %}experience-page{% endblock body_class %}
+{% block body_class %}manage-page{% endblock body_class %}
 
 {% block content %}
     <main>
         <section class="experience-section" id="experience">
             <div class="container">
-                <h1>Experience</h1>
+                <div class="experience-header">
+                    <h1>Experience</h1>
+                    <a href="{% url 'main:create_experience' %}"
+                       class="button project-add-button">
+                        <span aria-hidden="true">+</span>
+                        Tambah Experience
+                    </a>
+                </div>
                 <div class="portfolio-track" aria-label="Experience">
                     {% for exp in experience_list %}
                     <div class="project-card-outline">
@@ -24,6 +31,12 @@
                                 <p class="portfolio-desc">{{ exp.summary }}</p>
                             </article>
                         </a>
+                        {% comment %}
+                        Tombol hapus harus DI LUAR <a class="project-card-link">,
+                        kalau di dalam nanti klik tombol ikut menavigasi ke
+                        halaman detail.
+                        {% endcomment %}
+                        {% include "components/experience_delete_modal.html" with experience=exp %}
                     </div>
                     {% empty %}
                     <p>Belum ada pengalaman yang ditambahkan.</p>
