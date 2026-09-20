@@ -174,7 +174,8 @@ h1,
     grid-area: details;
 }
 
-.hero-kicker {
+.hero-kicker,
+.section-kicker {
     font-size: 0.85rem;
     letter-spacing: 0.08em;
     text-transform: uppercase;
@@ -438,6 +439,8 @@ h1,
     margin: 0;
 }
 
+/* Thumbnail selalu dipotong 16:9 agar semua kartu punya tinggi seragam
+   di carousel (Experience, Projects, & index). */
 .portfolio-img {
     width: 100%;
     aspect-ratio: 16 / 9;
@@ -563,6 +566,7 @@ h1,
 
 /* ===== FONT (JetBrains Mono) ===== */
 .hero-kicker,
+.section-kicker,
 .meta-row dt,
 .meta-row dd {
     font-family: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
@@ -728,5 +732,306 @@ main {
         flex: 1 1 auto;
         min-height: 0;
         overflow: hidden;
+    }
+}
+
+
+.project-form {
+    width: 100%;
+    max-width: 100%;
+    margin-top: 0rem;
+}
+
+.form-group {
+    margin-bottom: 1.25rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.4rem;
+    font-weight: 700;
+}
+
+.form-group input,
+.form-group textarea,
+.form-group select {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0.7rem;
+    color: var(--text-primary);
+    background-color: var(--surface);
+    border: 2px solid var(--accent);
+    border-radius: var(--radius);
+    font: inherit;
+    transition:
+        border-color 0.2s ease,
+        outline-color 0.2s ease;
+}
+
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus {
+    outline: 2px solid var(--accent);
+    border-color: var(--accent);
+}
+
+.form-error {
+    color: var(--accent);
+    font-size: 0.85rem;
+    margin-top: 0.35rem;
+}
+
+.button {
+    display: inline-block;
+    height: fit-content;
+    border: 0;
+    border-radius: var(--radius);
+    padding: 0.65rem 1rem;
+    background: var(--accent);
+    color: var(--on-accent);
+    cursor: pointer;
+    font: inherit;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.button-secondary {
+    background: var(--glass-bg);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+}
+
+.button-secondary:hover {
+    color: var(--text-primary);
+    border-color: var(--border-hover);
+}
+
+/* ===== PESAN FLASH (django.contrib.messages) ===== */
+/* Feedback dari create_experience dan delete_* */
+.flash-wrap {
+    margin-top: 1rem;
+}
+
+.flash {
+    margin-bottom: 0.5rem;
+    padding: 0.7rem 1rem;
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: var(--radius);
+    background: var(--glass-bg);
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.flash-error,
+.flash-warning {
+    border-left-color: var(--accent-secondary);
+}
+
+/* ===== HALAMAN PROJECTS & MANAGE ===== */
+/* Dipakai /projects/, /projects/manage/, dan /experience/manage/. */
+
+/* Halaman-halaman ini tidak mengunci tinggi seperti /experience/: biarkan
+   section tumbuh normal dan halaman di-scroll biasa. */
+body.projects-page .experience-section,
+body.manage-page .experience-section {
+    justify-content: flex-start;
+    overflow: visible;
+}
+
+.experience-header {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.experience-header h1 {
+    margin-bottom: 0;
+}
+
+.project-add-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+}
+
+.project-add-button span {
+    font-size: 1.25rem;
+    line-height: 1;
+}
+
+.empty-state {
+    padding: 1rem 0;
+    color: var(--text-subtle);
+    font-size: 0.9rem;
+}
+
+.experience-status {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+.project-search {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+}
+
+/* Input teks pencarian di halaman daftar project */
+.project-search__input {
+    width: 100%;
+    min-width: 0;
+    padding: 0.7rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    color: var(--text-primary);
+    font: inherit;
+}
+
+.project-search__input:focus {
+    outline: 2px solid var(--accent);
+    border-color: var(--accent);
+}
+
+/* Baris aksi di bawah kartu: tombol hapus (komponen delete modal) dan tautan
+   luar "Lihat Project" di halaman publik /projects/. */
+.project-card-outline > .experience-status {
+    padding: 0 0.5rem 0.5rem;
+}
+
+/* Utilita: sembunyikan elemen dari layout sekaligus dari screen reader */
+.hide {
+    display: none !important;
+}
+
+/* --- Modal konfirmasi hapus (Popover API) --- */
+.delete-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    max-height: none;
+    margin: 0;
+    padding: 1rem;
+    border: 0;
+    background: transparent;
+    z-index: 10;
+    align-items: center;
+    justify-content: center;
+}
+
+/* :popover-open (0,2,0) lebih spesifik dari display:none (0,1,0) */
+.delete-modal:popover-open {
+    display: flex;
+}
+
+.delete-modal__backdrop {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    border: 0;
+    background: rgba(0, 0, 0, 0.68);
+    cursor: default;
+}
+
+.delete-modal__content {
+    position: relative;
+    z-index: 1;
+    width: min(100%, 480px);
+    padding: 1.5rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-border);
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6);
+    color: var(--text-primary);
+}
+
+.delete-modal__content h2 {
+    margin: 0 0 0.75rem;
+    font-family: "Manrope", "Inter", -apple-system, sans-serif;
+    font-size: 1.5rem;
+}
+
+.delete-modal__content p {
+    color: var(--text-secondary);
+}
+
+.delete-modal__close {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 1.8rem;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.delete-modal__close:hover {
+    color: var(--text-primary);
+}
+
+.delete-modal__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+}
+
+.button-danger {
+    background: #b42318;
+    color: #f2f2f2;
+}
+
+@media (max-width: 600px) {
+    .experience-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .project-add-button {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .project-search {
+        flex-direction: column;
+    }
+
+    .project-search .button {
+        width: 100%;
+    }
+
+    .delete-modal {
+        align-items: flex-end;
+        padding: 0;
+    }
+
+    .delete-modal__content {
+        width: 100%;
+        padding: 1.25rem;
+        border-radius: var(--radius-border) var(--radius-border) 0 0;
+    }
+
+    .delete-modal__actions {
+        flex-direction: column-reverse;
+    }
+
+    .delete-modal__actions .button {
+        width: 100%;
+        text-align: center;
     }
 }

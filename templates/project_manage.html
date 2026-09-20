@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% comment %}
+Halaman MANAGE /projects/manage/ (tambah & hapus project).
+
+Daftar kartunya identik dengan halaman publik /projects/, hanya saja di sini
+ada tombol "Tambah Proyek" di header dan tombol hapus di tiap kartu.
+{% endcomment %}
+
+{% block meta %}
+    <title>Manage Projects - {{ name }}</title>
+{% endblock meta %}
+
+{% block body_class %}manage-page{% endblock body_class %}
+
+{% block content %}
+    <main>
+        <section class="experience-section" id="projects">
+            <div class="container">
+                <div class="experience-header">
+                    <h1>Projects</h1>
+                    <a href="{% url 'main:create_project' %}"
+                       class="button project-add-button">
+                        <span aria-hidden="true">+</span>
+                        Tambah Proyek
+                    </a>
+                </div>
+                {% include "components/project_search.html" %}
+                <div class="portfolio-track" aria-label="Projects">
+                    {% for project in project_list %}
+                    <div class="project-card-outline">
+                        <span class="glare-item-top"></span>
+                        <a href="{% url 'main:show_project_detail' project.title %}" class="project-card-link">
+                            <article class="portfolio-card project-card">
+                                <span class="glare-item-top"></span>
+                                {% if project.project_image_url %}
+                                <img class="portfolio-img" src="{{ project.project_image_url }}" alt="{{ project.title }}">
+                                {% endif %}
+                                <h3 class="portfolio-title">{{ project.title }}</h3>
+                                {% if project.tech_stack %}
+                                <p class="portfolio-kicker">{{ project.tech_stack }}</p>
+                                {% endif %}
+                                {% if project.description %}
+                                <p class="portfolio-desc">{{ project.description }}</p>
+                                {% endif %}
+                            </article>
+                        </a>
+                        {% comment %}
+                        Tombol hapus harus DI LUAR <a class="project-card-link">,
+                        kalau di dalam nanti klik tombol ikut menavigasi ke
+                        halaman detail.
+                        {% endcomment %}
+                        {% include "components/project_delete_modal.html" with project=project %}
+                    </div>
+                    {% empty %}
+                        {% if title_query %}
+                        <p class="empty-state">Tidak ada proyek dengan nama tersebut.</p>
+                        {% else %}
+                        <p class="empty-state">Belum ada proyek yang ditambahkan.</p>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+        </section>
+    </main>
+{% endblock content %}
+
+{% block scripts %}
+    <script src="/static/js/carousel-focus.js"></script>
+{% endblock scripts %}

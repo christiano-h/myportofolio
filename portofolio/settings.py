@@ -17,6 +17,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 ALLOWED_HOSTS = [h.strip() for h in os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1,christiano-hosea-myportofolio.pws.cs.ui.ac.id").split(",") if h.strip()]
+CSRF_TRUSTED_ORIGINS = [f"https://{h.strip()}" for h in os.getenv("CSRF_TRUSTED_ORIGINS", "localhost,127.0.0.1,christiano-hosea-myportofolio.pws.cs.ui.ac.id").split(",") if h.strip()]
 PRODUCTION = os.getenv('PRODUCTION', 'False').lower() == 'true'
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.

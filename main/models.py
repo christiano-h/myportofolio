@@ -36,7 +36,19 @@ class Project(models.Model):
     title = models.CharField(max_length=100)
     description = models.TextField(blank=True, null=True)
     thumbnail = models.URLField(blank=True, null=True)   # /static/css/img/... atau URL
+    tech_stack = models.CharField(max_length=200, blank=True, null=True)   # teks bebas, mis. "Django, PostgreSQL"
+    project_url = models.URLField(blank=True, null=True)   # link demo/repo
     content = models.TextField(blank=True, null=True)   # isi blog halaman detail
     
+    @property
+    def project_image_url(self):
+        """URL gambar siap dipakai di <img src>.
+
+        Alias eksplisit dari `thumbnail` supaya template tidak perlu tahu
+        bagaimana gambar disimpan; kalau format penyimpanan berubah
+        (mis. hanya menyimpan FILE_ID), cukup ubah di sini.
+        """
+        return self.thumbnail
+
     def __str__(self):
         return self.title
