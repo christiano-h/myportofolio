@@ -24,18 +24,37 @@ def show_experience(request):
     Hanya menampilkan daftar experience; tiap kartu bisa diklik menuju halaman
     blog-nya. Tambah/hapus ada di `manage_experience`.
     """
+    title_query = request.GET.get("title", "").strip()
+    experiences = Experience.objects.all().order_by("-started_at")
+
+    if title_query:
+        experiences = experiences.filter(title__icontains=title_query)
     context = {
         "name": "Christiano H",
-        "experience_list": Experience.objects.all().order_by("-started_at"),
+        "experience_list": experiences,
+        "title_query": title_query,
     }
     return render(request, "experience.html", context)
 
 
 def manage_experience(request):
-    """Halaman manage /experience/manage/ (tambah & hapus experience)."""
+    """Halaman manage /experience/manage/ (tambah, cari, & hapus experience).
+
+    Mendukung pencarian `?title=` supaya halaman ini bisa memakai kerangka yang
+    sama dengan /projects/manage/ (`templates/manage.html`).
+    """
+    title_query = request.GET.get("title", "").strip()
+    experiences = Experience.objects.all().order_by("-started_at")
+
+    if title_query:
+        experiences = experiences.filter(title__icontains=title_query)
+
     context = {
         "name": "Christiano H",
-        "experience_list": Experience.objects.all().order_by("-started_at"),
+        "experience_list": experiences,
+        # Hanya untuk mengisi ulang kotak pencarian; penyaringan sesungguhnya
+        # sudah dilakukan filter di atas.
+        "title_query": title_query,
     }
     return render(request, "experience_manage.html", context)
 

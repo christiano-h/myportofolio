@@ -1,0 +1,19 @@
+{% comment %}
+Seluruh grup field sebuah Django Form (label + widget + pesan error).
+
+Loop `{% for %}` sengaja ada di dalam file ini supaya halaman form tidak
+mengulang markup field; sebelumnya blok yang sama disalin di
+experience_form.html dan project_form.html.
+
+Wajib: form (django.forms.BaseForm).
+{% endcomment %}
+
+{% for field in form %}
+    <div class="form-group">
+        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+        {{ field }}
+        {% for error in field.errors %}
+            <p class="form-error">{{ error }}</p>
+        {% endfor %}
+    </div>
+{% endfor %}

@@ -8,6 +8,8 @@
             <div class="container">
                 <h1>{{ project.title }}</h1>
 
+                {% include "components/project_link_button.html" with project=project %}
+
                 {% if project.thumbnail %}
                 <img class="portfolio-img detail-hero" src="{{ project.thumbnail }}" alt="{{ project.title }}">
                 {% endif %}

@@ -652,7 +652,6 @@ main {
 
 /* Isi blog */
 .detail-body {
-    max-width: 68ch;
     color: var(--text-secondary);
     font-size: 1rem;
     line-height: 1.75;
@@ -722,13 +721,15 @@ main {
 
 /* ===== Halaman Experience HP: kunci tinggi (footer terlihat, hanya carousel yg scroll) ===== */
 @media (max-width: 720px) {
-    body.experience-page {
+    body.experience-page,
+    body.manage-page {
         height: 100vh;
         height: 100dvh;
         overflow: hidden;
     }
 
-    body.experience-page main {
+    body.experience-page main,
+    body.manage-page main {
         flex: 1 1 auto;
         min-height: 0;
         overflow: hidden;
@@ -874,7 +875,8 @@ body.manage-page .experience-section {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    margin-top: 1rem;
+    margin-top: 0.5rem;
+    margin-bottom: 0.7rem;
 }
 
 .project-search {

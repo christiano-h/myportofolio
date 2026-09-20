@@ -1,0 +1,24 @@
+{% comment %}
+Form pencarian daftar berdasarkan judul (query string `?title=`).
+
+Dipakai bersama oleh /projects/, /projects/manage/, dan /experience/manage/.
+`action="{{ request.path }}"` membuat form selalu menembak balik ke halaman
+tempat ia dirender, jadi hasil filter tidak melempar pengguna ke halaman lain.
+
+Wajib    : title_query - untuk mengisi ulang isi kotak pencarian.
+Opsional : placeholder - teks petunjuk; dipakai di kotak pencarian dan aria-label.
+
+Catatan: nama class-nya masih `project-search` / `project-search__input`
+karena komponen ini memakai ulang aturan CSS yang sudah ada di style.css.
+Mengganti nama class berarti menyentuh beberapa aturan CSS + 1 assertion di
+main/tests.py, jadi sengaja dibiarkan.
+{% endcomment %}
+<form method="get" action="{{ request.path }}" class="project-search">
+    <input type="search"
+           name="title"
+           value="{{ title_query }}"
+           placeholder="{{ placeholder }}"
+           class="project-search__input"
+           aria-label="{{ placeholder }}">
+    <button type="submit" class="button">Cari</button>
+</form>

@@ -106,9 +106,9 @@ class UrlRoutingTests(TestCase):
             ("main:show_main", [], "/"),
             ("main:show_experience", [], "/experience/"),
             ("main:show_experience_detail", ["SELARAS 5.0"], "/experience/SELARAS%205.0/"),
-            ("main:show_project_detail", ["SINTAKS"], "/project/SINTAKS/"),
-            ("main:show_project_detail", ["Ini ikan apa?"], "/project/Ini%20ikan%20apa%3F/"),
-            ("main:show_project_detail", ["UI/UX Redesign"], "/project/UI/UX%20Redesign/"),
+            ("main:show_project_detail", ["SINTAKS"], "/projects/SINTAKS/"),
+            ("main:show_project_detail", ["Ini ikan apa?"], "/projects/Ini%20ikan%20apa%3F/"),
+            ("main:show_project_detail", ["UI/UX Redesign"], "/projects/UI/UX%20Redesign/"),
             ("main:create_experience", [], "/experience/manage/add/"),
             ("main:show_projects", [], "/projects/"),
             ("main:create_project", [], "/projects/manage/add/"),
@@ -152,7 +152,7 @@ class ShowMainViewTests(TestCase):
     def test_kartu_project_punya_link_ke_halaman_detail(self):
         response = self.client.get(reverse("main:show_main"))
         self.assertContains(response, "project-card-link")
-        self.assertContains(response, "/project/SINTAKS/")
+        self.assertContains(response, "/projects/SINTAKS/")
 
     def test_project_tanpa_thumbnail_tidak_menambah_tag_img(self):
         sebelum = self.client.get(reverse("main:show_main")).content.decode().count("<img")
@@ -279,7 +279,8 @@ class DetailViewTests(TestCase):
             thumbnail="/static/css/img/selaras.jpg")
         self.pro = Project.objects.create(
             title="SINTAKS", description="Deskripsi sintaks",
-            content="Isi blog panjang.", thumbnail="/static/css/img/sintaks.jpg")
+            content="Isi blog panjang.", thumbnail="/static/css/img/sintaks.jpg",
+            project_url="https://example.com/demo-proyek")
 
     def test_experience_detail_ok(self):
         r = self.client.get(reverse("main:show_experience_detail", args=[self.exp.title]))
@@ -307,8 +308,18 @@ class DetailViewTests(TestCase):
         self.assertEqual(r.context["project"].pk, self.pro.pk)
         self.assertContains(r, "Isi blog panjang.")
 
+    def test_project_detail_menampilkan_tombol_lihat_project(self):
+        r = self.client.get(reverse("main:show_project_detail", args=[self.pro.title]))
+        self.assertContains(r, "Lihat Project")
+        self.assertContains(r, "https://example.com/demo-proyek")
+
+    def test_project_detail_tanpa_project_url_tidak_ada_tombol(self):
+        Project.objects.filter(pk=self.pro.pk).update(project_url=None)
+        r = self.client.get(reverse("main:show_project_detail", args=[self.pro.title]))
+        self.assertNotContains(r, "Lihat Project")
+
     def test_project_detail_404(self):
-        self.assertEqual(self.client.get("/project/X/").status_code, 404)
+        self.assertEqual(self.client.get("/projects/X/").status_code, 404)
 
     def test_project_detail_fallback(self):
         Project.objects.filter(pk=self.pro.pk).update(content=None)
@@ -469,11 +480,15 @@ class ShowProjectsViewTests(ProjectDataMixin, TestCase):
         r = self.client.get(reverse("main:show_projects"))
         self.assertContains(r, "Belum ada proyek yang ditambahkan.")
 
-    def test_kartu_menampilkan_thumbnail_tech_stack_dan_link(self):
+    def test_kartu_menampilkan_thumbnail_dan_tech_stack(self):
         r = self.client.get(reverse("main:show_projects"))
         self.assertContains(r, "/static/css/img/daftar_sintaks.jpg")
         self.assertContains(r, "Django, PostgreSQL")
-        self.assertContains(r, "https://github.com/christiano-h/sintaks")
+
+    def test_kartu_daftar_tidak_menautkan_langsung_ke_url_eksternal(self):
+        """Tautan luar hanya di halaman detail, supaya alurnya dua langkah."""
+        r = self.client.get(reverse("main:show_projects"))
+        self.assertNotContains(r, "https://github.com/christiano-h/sintaks")
 
     def test_tanpa_thumbnail_tidak_menambah_tag_img(self):
         sebelum = self.client.get(reverse("main:show_projects")).content.decode().count("<img")

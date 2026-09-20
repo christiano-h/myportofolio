@@ -11,15 +11,7 @@
                       action="{% url 'main:create_experience' %}"
                       class="project-form">
                     {% csrf_token %}
-                    {% for field in form %}
-                        <div class="form-group">
-                            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-                            {{ field }}
-                            {% for error in field.errors %}
-                                <p class="form-error">{{ error }}</p>
-                            {% endfor %}
-                        </div>
-                    {% endfor %}
+                    {% include "components/form_fields.html" with form=form %}
                     <button type="submit" class="button">Tambah Experience</button>
                     <a href="{% url 'main:manage_experience' %}" class="button button-secondary">Batal</a>
                 </form>

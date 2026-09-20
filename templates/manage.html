@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% comment %}
+Kerangka bersama halaman MANAGE (tambah & hapus): /projects/manage/ dan
+/experience/manage/.
+
+Shell-nya disatukan supaya kedua halaman tampil persis sama dan yang berbeda
+hanya isinya. Karena memakai kerangka yang sama, tombol tambah, judul, track
+kartu, dan block scripts otomatis memakai styling yang sama tanpa aturan CSS
+tambahan.
+{% endcomment %}
+
+{% block meta %}
+    <title>{% block page_title %}Manage{% endblock %} - {{ name }}</title>
+{% endblock meta %}
+
+{% block body_class %}manage-page{% endblock body_class %}
+
+{% block content %}
+    <main>
+        <section class="experience-section" id="{% block section_id %}manage{% endblock %}">
+            <div class="container">
+                <div class="experience-header">
+                    <h1>{% block heading %}Manage{% endblock %}</h1>
+                    <a href="{% block add_url %}{% endblock %}"
+                       class="button project-add-button">
+                        <span aria-hidden="true">+</span>
+                        {% block add_label %}Tambah{% endblock %}
+                    </a>
+                </div>
+                {% block search %}{% endblock %}
+                <div class="portfolio-track" aria-label="{% block list_aria %}Daftar{% endblock %}">
+                    {% block cards %}{% endblock %}
+                </div>
+            </div>
+        </section>
+    </main>
+{% endblock content %}
+
+{% block scripts %}
+    {% include "components/carousel_scripts.html" %}
+{% endblock scripts %}

@@ -1,0 +1,17 @@
+{% comment %}
+Tombol "Lihat Project" (tautan luar) di halaman detail project
+`/projects/<judul>/`. Wajib: project (objek Project dengan project_url).
+
+Sengaja ditaruh di halaman detail, bukan di kartu daftar, supaya alurnya
+dua langkah: kartu -> halaman detail -> tombol ini -> URL eksternal.
+Tidak dirender kalau project_url kosong (lihat guard di bawah).
+{% endcomment %}
+
+{% if project.project_url %}
+<p class="experience-status">
+    <a href="{{ project.project_url }}"
+       class="button button-secondary"
+       target="_blank"
+       rel="noopener">Lihat Project</a>
+</p>
+{% endif %}

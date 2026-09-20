@@ -41,7 +41,7 @@ urlpatterns = [
     # "/" tetap bisa dibuka, mis. "UI/UX Redesign". `<str:title>` menolak "/"
     # sehingga `{% url %}` di kartu melempar NoReverseMatch (halaman 500).
     path("experience/<path:title>/", show_experience_detail, name="show_experience_detail"),
-    path("project/<path:title>/", show_project_detail, name="show_project_detail"),
+    path("projects/<path:title>/", show_project_detail, name="show_project_detail"),
 
     path("api/projects/", get_projects_json, name="get_projects_json"),
     path("api/experiences/", get_experiences_json, name="get_experiences_json"),

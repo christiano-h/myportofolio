@@ -4,9 +4,9 @@
 Halaman PUBLIK /projects/ (read-only).
 
 Hanya menampilkan daftar project; tidak ada tombol tambah/hapus. Kartunya
-memakai markup carousel yang sama dengan /experience/ (project-card-outline ->
-project-card-link -> portfolio-card) supaya tampilan kedua halaman konsisten.
-Tambah/hapus ada di /projects/manage/.
+memakai komponen `components/project_card.html` yang sama dengan halaman
+manage, dan marka carousel yang sama dengan /experience/ supaya tampilan
+kedua halaman konsisten. Tambah/hapus ada di /projects/manage/.
 {% endcomment %}
 
 {% block meta %}
@@ -20,40 +20,10 @@ Tambah/hapus ada di /projects/manage/.
         <section class="experience-section" id="projects">
             <div class="container">
                 <h1>Projects</h1>
-                {% include "components/project_search.html" %}
+                {% include "components/list_search.html" with placeholder="Cari berdasarkan nama proyek" %}
                 <div class="portfolio-track" aria-label="Projects">
                     {% for project in project_list %}
-                    <div class="project-card-outline">
-                        <span class="glare-item-top"></span>
-                        <a href="{% url 'main:show_project_detail' project.title %}" class="project-card-link">
-                            <article class="portfolio-card project-card">
-                                <span class="glare-item-top"></span>
-                                {% if project.project_image_url %}
-                                <img class="portfolio-img" src="{{ project.project_image_url }}" alt="{{ project.title }}">
-                                {% endif %}
-                                <h3 class="portfolio-title">{{ project.title }}</h3>
-                                {% if project.tech_stack %}
-                                <p class="portfolio-kicker">{{ project.tech_stack }}</p>
-                                {% endif %}
-                                {% if project.description %}
-                                <p class="portfolio-desc">{{ project.description }}</p>
-                                {% endif %}
-                            </article>
-                        </a>
-                        {% comment %}
-                        Tautan luar tidak boleh ada di dalam <a class="project-card-link">
-                        (anchor bersarang tidak valid), jadi ditaruh sebagai baris
-                        terpisah di bawah kartu.
-                        {% endcomment %}
-                        {% if project.project_url %}
-                        <p class="experience-status">
-                            <a href="{{ project.project_url }}"
-                               class="button button-secondary"
-                               target="_blank"
-                               rel="noopener">Lihat Project</a>
-                        </p>
-                        {% endif %}
-                    </div>
+                        {% include "components/project_card.html" with project=project %}
                     {% empty %}
                         {% if title_query %}
                         <p class="empty-state">Tidak ada proyek dengan nama tersebut.</p>
@@ -68,5 +38,5 @@ Tambah/hapus ada di /projects/manage/.
 {% endblock content %}
 
 {% block scripts %}
-    <script src="/static/js/carousel-focus.js"></script>
+    {% include "components/carousel_scripts.html" %}
 {% endblock scripts %}
