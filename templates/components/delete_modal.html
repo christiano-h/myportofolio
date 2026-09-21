@@ -18,7 +18,13 @@ Variabel yang wajib diisi:
 Catatan: modal ini butuh Popover API (Chrome 114+, Safari 17+, Firefox 125+).
 Di browser lama, tombol tidak akan membuka apa pun.
 {% endcomment %}
+
 <p class="experience-status">
+    {% if action_url %}
+    <a href="{{ action_url }}"
+       class="button button-secondary"
+       title="{{ action_label }}">{{ action_label }}</a>
+    {% endif %}
     <button type="button"
             class="button button-danger"
             popovertarget="{{ modal_prefix }}-{{ object_id }}"
@@ -27,6 +33,7 @@ Di browser lama, tombol tidak akan membuka apa pun.
         {{ trigger_label }}
     </button>
 </p>
+
 <div id="{{ modal_prefix }}-{{ object_id }}"
      class="delete-modal"
      popover="auto"

@@ -1,2 +1,2 @@
 {% url 'main:delete_experience' experience.id as delete_experience_url %}
-{% include "components/delete_modal.html" with modal_prefix="delete-experience" object_id=experience.id delete_url=delete_experience_url object_title=experience.title trigger_label="Hapus Experience" heading="Hapus Experience?" aria_label="Hapus experience ini" %}
+{% include "components/delete_modal.html" with modal_prefix="delete-experience" object_id=experience.id delete_url=delete_experience_url object_title=experience.title trigger_label="Hapus Experience" heading="Hapus Experience?" aria_label="Hapus experience ini" action_url=edit_url action_label="Ubah Experience" %}
