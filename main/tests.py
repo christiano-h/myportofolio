@@ -674,18 +674,18 @@ class CreateExperienceViewTests(TestCase):
 
 
 class NavigasiDanRuteManageTests(TestCase):
-    """Navbar tanpa link Projects + rute `manage` tidak menabrak `<str:title>`."""
+    """Navbar dengan link Profile/Project/Experience + rute `manage` tidak menabrak `<str:title>`."""
 
     def setUp(self):
         Experience.objects.all().delete()
         Project.objects.all().delete()
 
-    def test_navbar_menyisakan_profile_dan_experience(self):
+    def test_navbar_punya_profile_project_dan_experience(self):
         for nama in ["main:show_main", "main:show_experience", "main:show_projects"]:
             with self.subTest(halaman=nama):
                 r = self.client.get(reverse(nama))
+                self.assertContains(r, reverse("main:show_projects"))
                 self.assertContains(r, reverse("main:show_experience"))
-                self.assertNotContains(r, 'href="/projects/"')
 
     def test_manage_projects_tidak_404(self):
         """Sebelum perbaikan urutan urlpatterns, "manage" tertangkap `<str:title>`."""
