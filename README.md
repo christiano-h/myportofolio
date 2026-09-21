@@ -139,4 +139,60 @@ Kelas : PBP B
 
    **Catatan saat deploy:** file migrasi adalah bagian dari kode, jadi harus di-*commit* dan di-*push*. Sebaliknya, `makemigrations` tidak pernah dijalankan otomatis di server, karena migrasi adalah artefak yang harus saya tinjau dan uji dulu di lokal. Untuk memastikan tidak ada model yang belum termigrasi, saya memakai `python manage.py makemigrations --check --dry-run`.
 
+
+### Tugas 3
+
+1. **Kenapa pakai `ModelForm` dan bukan form HTML biasa? Lalu kenapa `{% csrf_token %}` wajib?**
+
+   - **Tidak perlu menulis ulang aturan yang sudah ada di model.** Kalau formnya dibuat manual, nama field, tipe input, batas panjang, dan mana yang wajib harus saya salin sendiri dari `models.py`. Kalau salah satu diubah, yang lain bisa lupa ikut diubah. Dengan `ModelForm`, saya cukup menyebut field mana yang dipakai:
+     ```python
+     class Meta:
+         model = Experience
+         fields = ["title", "job_title", "category", "thumbnail", "summary", "content", "ended_at"]
+     ```
+     Label, tipe input, dan aturannya ikut dari model. `Experience` punya 9 field, yang tidak bisa diisi cuma `id` dan `started_at`, jadi sisanya masuk semua ke form.
+   - **Validasi dikerjakan di server.** Aturan seperti `type="url"` atau `required` di HTML itu cuma penjaga di browser — orang bisa kirim POST langsung pakai Postman dan melewatinya. Ini pernah kejadian ke saya: thumbnail lama saya isinya `/static/css/img/...`, dan waktu form update dipakai, datanya ditolak dengan pesan "Enter a valid URL." karena fieldnya `URLField`. Jadi validasi Django tetap jalan walaupun browser dilewati.
+   - **Simpan dan ubah data jadi ringkas.** Create tinggal `form.save()`. Update mengoper objek lamanya lewat `instance`, jadi yang berubah record yang sama, bukan bikin record baru:
+     ```python
+     form = ExperienceForm(request.POST or None, instance=experience)
+     ```
+   - **Pesan error dan isi ulang input otomatis.** Kalau validasi gagal, input yang tadi diketik tidak hilang dan pesan errornya menempel di field yang salah. Di `components/form_fields.html` saya cukup mengulang formnya:
+     ```html
+     {% for field in form %}
+         {{ field.label }} {{ field }}
+         {% for error in field.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+     {% endfor %}
+     ```
+   - **Tampilannya bisa dan mudah untuk diatur.** Label, placeholder, dan widget diatur di `Meta`. Contohnya input tanggal saya jadikan `datetime-local` supaya muncul pemilih tanggal dari browser.
+   - **Kenapa `{% csrf_token %}` wajib:** supaya situs lain tidak bisa menyuruh browser kita mengirim data ke proyek ini. Cookie kita ikut terkirim otomatis di setiap request, jadi tanpa pengaman tambahan server tidak bisa membedakan mana yang klik asli dan mana yang dibuat situs lain. Django meminta token di setiap form POST, jadi kalau tidak ada, halamannya langsung 403. Karena itu token ini ada di semua form yang mengubah data: form create/update (`form_page.html`) dan form di dalam modal hapus (`delete_modal.html`). Selain itu view delete saya hanya menghapus kalau methodnya POST, jadi klik link tidak akan menghapus apa pun.
+
+2. **Kenapa JSON lebih dipakai daripada XML?**
+
+   - JavaScript sudah paham JSON langsung (`fetch().json()`, `JSON.parse`). XML harus diparsing dulu sebelum bisa dibaca.
+   - Ukurannya lebih kecil karena tidak ada tag penutup, dan lebih cepat diproses.
+   - Tipe datanya sudah terdefinisi: angka, boolean, ada juga `null`. Di XML semuanya teks, jadi angka harus dikonversi lagi.
+   - Bentuknya mirip `dict` dan `list` di Python, jadi gampang dipakai tanpa diubah sana-sini.
+   - Banyak alat dan framework modern sudah pakai JSON, termasuk Postman yang kita pakai untuk menguji API tugas individu ini.
+   - XML masih dipakai kalau butuh skema ketat atau tanda tangan digital. Tapi untuk kirim data, JSON lebih praktis.
+
+3. **Bagaimana alur data portofolio diambil sebagai JSON, dan kenapa perlu serialisasi?**
+
+   Kalau saya buka `/api/projects/`:
+
+   1. Request masuk ke `main/urls.py`, route `api/projects/` memanggil view `get_projects_json`.
+   2. Viewnya mengambil data dari database (bisa difilter dari query, misal `?title=sint`):
+      ```python
+      projects = Project.objects.all()
+      return HttpResponse(serializers.serialize("json", projects), content_type="application/json")
+      ```
+   3. Hasilnya teks JSON, kira-kira seperti ini:
+      ```json
+      [{"model": "main.project", "pk": 1, "fields": {"title": "SINTAKS", "tech_stack": null}}]
+      ```
+   4. Di proyek ini JSON itu dipakai lagi oleh `_projects_from_json()`, yang mengubahnya balik jadi objek Python lewat `serializers.deserialize`, lalu dikirim ke template sebagai `project_list`.
+
+   Kenapa harus diserialize dulu? Karena objek model itu objek Python yang nyambung ke database, bukan teks, dan isinya banyak hal yang cuma dipakai Django sendiri. Jadi datanya diubah dulu jadi teks JSON supaya bisa dikirim lewat HTTP, lalu di sisi penerima teksnya diubah balik jadi objek.
+
+   Dua hal yang perlu diingat: `serialize` menghasilkan string, sedangkan `deserialize` menghasilkan generator yang harus dijadikan `list` dulu, kalau tidak isinya habis setelah dipakai. Alur ini melewati JSON, bukan query langsung: objek hasilnya punya `_state.adding == True`, artinya objek itu dibentuk ulang, bukan dibaca dari database. Ini saya kunci di test `test_hasil_deserialize_json_berisi_objek_project`.
+
 > AI disclosure : [ristek.link/AI-DISCLOSURE-PBP](https://ristek.link/AI-DISCLOSURE-PBP)
