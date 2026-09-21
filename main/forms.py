@@ -15,6 +15,7 @@ class ExperienceForm(ModelForm):
     # dideklarasikan eksplisit agar input_formats cocok dengan <input type="datetime-local">
     ended_at = DateTimeField(
         required=False,
+        label="Tanggal Selesai",
         input_formats=["%Y-%m-%dT%H:%M", "%Y-%m-%dT%H:%M:%S"],
         widget=DateTimeInput(
             attrs={"type": "datetime-local"},
@@ -36,25 +37,24 @@ class ExperienceForm(ModelForm):
         ]
 
         labels = {
-            "title": "Nama Proyek",
+            "title": "Nama Experience",
             "job_title": "Jabatan",
             "category": "Kategori",
             "thumbnail": "Thumbnail", #link
             "summary": "Ringkasan", 
             "content": "Konten",
-            "ended_at": "Tanggal Selesai",
         }
 
         widgets = {
             "title": TextInput(
                 attrs={
-                    "placeholder": "Portfolio Website",
+                    "placeholder": "Contoh: RISTEK Fasilkom UI",
                     "maxlength": 100,
                 }
             ),
             "job_title": TextInput(
                 attrs={
-                    "placeholder": "Contoh: Software Engineer",
+                    "placeholder": "Contoh: Project Officer",
                     "maxlength": 100,
                 }
             ),
