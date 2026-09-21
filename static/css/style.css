@@ -174,8 +174,7 @@ h1,
     grid-area: details;
 }
 
-.hero-kicker,
-.section-kicker {
+.hero-kicker {
     font-size: 0.85rem;
     letter-spacing: 0.08em;
     text-transform: uppercase;
@@ -399,7 +398,7 @@ h1,
 }
 
 /* Hover */
-@media (hover: hover) {
+@media (hover: hover) and (pointer: fine) {
     .project-card-outline:hover {
         transform: translateY(-6px);
         box-shadow: 0 14px 30px rgba(0, 0, 0, 0.5);
@@ -412,14 +411,11 @@ h1,
 
 /* Kartu aktif di carousel HP */
 .project-card.is-active {
-    border: 3px solid rgba(242, 242, 242, 0.6);
-    box-shadow: 0 0 0 1px rgba(242, 242, 242, 0.12), 0 10px 24px rgba(0, 0, 0, 0.5);
     z-index: 1;
 }
 
 /* Pop-up kartu tengah di carousel HP */
 .project-card-outline.is-active {
-    transform: translateY(-6px) scale(1.02);
     z-index: 2;
 }
 
@@ -516,7 +512,7 @@ h1,
     flex: 1 1 auto;
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    justify-content: flex-start;
 }
 
 .experience-section h1 {
@@ -566,7 +562,6 @@ h1,
 
 /* ===== FONT (JetBrains Mono) ===== */
 .hero-kicker,
-.section-kicker,
 .meta-row dt,
 .meta-row dd {
     font-family: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
@@ -578,6 +573,18 @@ main {
     flex: 1 1 auto;
     display: flex;
     flex-direction: column;
+    gap: 0;
+}
+
+/* Halaman daftar & manage: main tidak dipaksa mengisi viewport supaya tidak ada
+   pita kosong antara konten dan footer. Sticky/push footer tetap berlaku di
+   halaman detail, form, dan index (lihat aturan main di atas). */
+@media (min-width: 721px) {
+    body.projects-page main,
+    body.experience-page main,
+    body.manage-page main {
+        flex: 0 0 auto;
+    }
 }
 
 /* HP: Experience = carousel vertikal dalam wadah (footer tetap terlihat) */
@@ -613,6 +620,13 @@ main {
         /* fade halus di tepi atas & bawah */
         -webkit-mask-image: linear-gradient(to bottom, transparent, #000 20%, #000 80%, transparent);
         mask-image: linear-gradient(to bottom, transparent, #000 20%, #000 80%, transparent);
+    }
+
+    body.manage-page .experience-section .portfolio-track {
+        padding: 0;
+        scroll-snap-type: none;
+        -webkit-mask-image: none;
+        mask-image: none;
     }
 
     .experience-section .portfolio-track::-webkit-scrollbar {
@@ -721,15 +735,16 @@ main {
 
 /* ===== Halaman Experience HP: kunci tinggi (footer terlihat, hanya carousel yg scroll) ===== */
 @media (max-width: 720px) {
+
     body.experience-page,
-    body.manage-page {
+    body.projects-page {
         height: 100vh;
         height: 100dvh;
         overflow: hidden;
     }
 
     body.experience-page main,
-    body.manage-page main {
+    body.projects-page main {
         flex: 1 1 auto;
         min-height: 0;
         overflow: hidden;
@@ -737,10 +752,13 @@ main {
 }
 
 
+/* Halaman form: display sebelumnya `flex-inline` (tidak valid) dan `gap`
+   pada wadah non-flex (tidak berefek) dihapus. Jarak antar field diatur
+   oleh .form-group { margin-bottom }. */
 .project-form {
     width: 100%;
     max-width: 100%;
-    margin-top: 0rem;
+    margin-top: 0;
 }
 
 .form-group {
@@ -769,6 +787,11 @@ main {
         outline-color 0.2s ease;
 }
 
+#id_ended_at::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+    cursor: pointer;
+}
+
 .form-group input:focus,
 .form-group textarea:focus,
 .form-group select:focus {
@@ -782,18 +805,45 @@ main {
     margin-top: 0.35rem;
 }
 
-.button {
-    display: inline-block;
+/* ===== TOMBOL: base bersama untuk .button, .button-secondary, .button-danger ===== */
+.button-group {
+    display: flex;
+    gap: 12px;
+    width: 100%;
+    margin-top: 16px;
+}
+
+/* Berlaku untuk tombol apa pun di grup, tanpa bergantung kelas .button */
+.button-group>*,
+.experience-status>* {
+    flex: 1 1 0;
+    min-width: 0;
+    height: auto;
+}
+
+.button,
+.button-secondary,
+.button-danger,
+.button-search {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
     height: fit-content;
     border: 0;
-    border-radius: var(--radius);
+    border-radius: 24px;
     padding: 0.65rem 1rem;
-    background: var(--accent);
-    color: var(--on-accent);
-    cursor: pointer;
     font: inherit;
     font-weight: 700;
     text-decoration: none;
+    cursor: pointer;
+}
+
+/* Varian: cukup warna & garis tepi */
+.button,
+.button-search {
+    background: var(--accent);
+    color: var(--on-accent);
 }
 
 .button-secondary {
@@ -805,6 +855,16 @@ main {
 .button-secondary:hover {
     color: var(--text-primary);
     border-color: var(--border-hover);
+    box-shadow: 0 0px 15px rgba(169, 166, 166, 0.4);
+}
+
+.button-danger {
+    background: #b42318;
+    color: #f2f2f2;
+}
+
+.button-danger:hover {
+    box-shadow: #b42318 0 0 16px;
 }
 
 /* ===== PESAN FLASH (django.contrib.messages) ===== */
@@ -824,18 +884,11 @@ main {
     font-size: 0.9rem;
     line-height: 1.5;
 }
-
-.flash-error,
-.flash-warning {
-    border-left-color: var(--accent-secondary);
-}
-
 /* ===== HALAMAN PROJECTS & MANAGE ===== */
 /* Dipakai /projects/, /projects/manage/, dan /experience/manage/. */
 
 /* Halaman-halaman ini tidak mengunci tinggi seperti /experience/: biarkan
    section tumbuh normal dan halaman di-scroll biasa. */
-body.projects-page .experience-section,
 body.manage-page .experience-section {
     justify-content: flex-start;
     overflow: visible;
@@ -847,7 +900,7 @@ body.manage-page .experience-section {
     justify-content: space-between;
     align-items: center;
     gap: 1rem;
-    margin-bottom: 1.5rem;
+    margin-bottom: 0.75rem;
 }
 
 .experience-header h1 {
@@ -860,9 +913,12 @@ body.manage-page .experience-section {
     gap: 0.45rem;
 }
 
-.project-add-button span {
-    font-size: 1.25rem;
-    line-height: 1;
+@media (min-width: 721px) {
+
+    .project-add-button,
+    .button-search {
+        border-radius: var(--radius);
+    }
 }
 
 .empty-state {
@@ -873,10 +929,9 @@ body.manage-page .experience-section {
 
 .experience-status {
     display: flex;
-    align-items: center;
+    align-items: stretch;
+    justify-content: center;
     gap: 0.5rem;
-    margin-top: 0.5rem;
-    margin-bottom: 0.7rem;
 }
 
 .project-search {
@@ -904,15 +959,11 @@ body.manage-page .experience-section {
 
 /* Baris aksi di bawah kartu: tombol hapus (komponen delete modal) dan tautan
    luar "Lihat Project" di halaman publik /projects/. */
-.project-card-outline > .experience-status {
-    padding: 0 0.5rem 0.5rem;
+.project-card-outline>.experience-status {
+    padding: 0.75rem 0.1rem 0.5rem;
 }
 
 /* Utilita: sembunyikan elemen dari layout sekaligus dari screen reader */
-.hide {
-    display: none !important;
-}
-
 /* --- Modal konfirmasi hapus (Popover API) --- */
 .delete-modal {
     display: none;
@@ -993,12 +1044,14 @@ body.manage-page .experience-section {
     margin-top: 1.5rem;
 }
 
-.button-danger {
-    background: #b42318;
-    color: #f2f2f2;
+/* Tombol di dalam modal hapus berbagi lebar rata (50-50) */
+.delete-modal__actions>* {
+    flex: 1 1 0;
+    min-width: 0;
 }
 
-@media (max-width: 600px) {
+
+@media (max-width: 720px) {
     .experience-header {
         flex-direction: column;
         align-items: flex-start;
