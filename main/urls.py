@@ -14,6 +14,8 @@ from main.views import (
     show_main,
     show_project_detail,
     show_projects,
+    update_experience,
+    update_project,
 )
 
 app_name = "main"
@@ -32,9 +34,11 @@ urlpatterns = [
     path("experience/manage/", manage_experience, name="manage_experience"),
     path("experience/manage/add/", create_experience, name="create_experience"),
     path("experience/manage/<uuid:experience_id>/delete/", delete_experience, name="delete_experience"),
+    path("experience/manage/<uuid:experience_id>/update/", update_experience, name="update_experience"),
     path("projects/manage/", manage_projects, name="manage_projects"),
     path("projects/manage/add/", create_project, name="create_project"),
     path("projects/manage/<int:project_id>/delete/", delete_project, name="delete_project"),
+    path("projects/manage/<int:project_id>/update/", update_project, name="update_project"),
 
     # === Halaman blog (detail) ===
     # Pakai `<path:title>` (bukan `<str:title>`) supaya judul yang mengandung

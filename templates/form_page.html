@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% comment %}
+Kerangka bersama halaman FORM (tambah & ubah): experience_form, project_form,
+experience_update, dan project_update.
+
+Blok yang diisi halaman anak:
+  page_title   - isi <title>
+  form_heading - teks <h1>
+  form_action  - tujuan submit form
+  submit_label - teks tombol simpan
+  cancel_url   - tujuan tombol batal
+{% endcomment %}
+
+{% block meta %}
+    <title>{% block page_title %}Form{% endblock %} - {{ name }}</title>
+{% endblock meta %}
+
+{% block content %}
+    <main>
+        <section class="experience-section">
+            <div class="container">
+                <h1>{% block form_heading %}Form{% endblock %}</h1>
+                <form method="post"
+                      action="{% block form_action %}{% endblock %}"
+                      class="project-form">
+                    {% csrf_token %}
+                    {% include "components/form_fields.html" with form=form %}
+                    <div class="button-group">
+                        <button type="submit" class="button-secondary">{% block submit_label %}Simpan{% endblock %}</button>
+                        <a href="{% block cancel_url %}{% endblock %}" class="button-danger">Batal</a>
+                    </div>
+                </form>
+            </div>
+        </section>
+    </main>
+{% endblock content %}

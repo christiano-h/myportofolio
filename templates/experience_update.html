@@ -1,0 +1,7 @@
+{% extends "form_page.html" %}
+
+{% block page_title %}Edit Experience{% endblock %}
+{% block form_heading %}Ubah Experience{% endblock %}
+{% block form_action %}{% url 'main:update_experience' experience.id %}{% endblock %}
+{% block submit_label %}Simpan Perubahan{% endblock %}
+{% block cancel_url %}{% url 'main:manage_experience' %}{% endblock %}

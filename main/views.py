@@ -207,3 +207,45 @@ def delete_experience(request, experience_id):
         return redirect("main:manage_experience")
 
     return redirect("main:manage_experience")
+
+
+def update_experience(request, experience_id):
+    """Ubah experience berdasarkan primary key-nya.
+
+    Memakai pk, bukan judul, mengikuti alasan `delete_experience`: judul tidak
+    dijamin unik dan bisa berubah, sehingga URL berbasis judul tidak stabil
+    (alamat lama mati setelah judul diubah, dan judul kembar membuat
+    `get_object_or_404` melempar MultipleObjectsReturned alias 500).
+    """
+    experience = get_object_or_404(Experience, pk=experience_id)
+    form = ExperienceForm(request.POST or None, instance=experience)
+
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, "Experience berhasil diperbarui!")
+        return redirect("main:manage_experience")
+
+    context = {
+        "name": "Christiano H",
+        "form": form,
+        "experience": experience,
+    }
+    return render(request, "experience_update.html", context)
+
+
+def update_project(request, project_id):
+    """Ubah project berdasarkan primary key-nya (alasan sama seperti experience)."""
+    project = get_object_or_404(Project, pk=project_id)
+    form = ProjectForm(request.POST or None, instance=project)
+
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, "Project berhasil diperbarui!")
+        return redirect("main:manage_projects")
+
+    context = {
+        "name": "Christiano H",
+        "form": form,
+        "project": project,
+    }
+    return render(request, "project_update.html", context)

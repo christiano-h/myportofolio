@@ -1,0 +1,7 @@
+{% extends "form_page.html" %}
+
+{% block page_title %}Edit Project{% endblock %}
+{% block form_heading %}Ubah Project{% endblock %}
+{% block form_action %}{% url 'main:update_project' project.id %}{% endblock %}
+{% block submit_label %}Simpan Perubahan{% endblock %}
+{% block cancel_url %}{% url 'main:manage_projects' %}{% endblock %}

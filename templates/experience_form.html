@@ -1,21 +1,7 @@
-{% extends "base.html" %}
-{% block meta %}
-    <title>Add Experience - {{ name }}</title>
-{% endblock meta %}
-{% block content %}
-    <main>
-        <section class="experience-section">
-            <div class="container">
-                <h1>Tambahkan Experience</h1>
-                <form method="post"
-                      action="{% url 'main:create_experience' %}"
-                      class="project-form">
-                    {% csrf_token %}
-                    {% include "components/form_fields.html" with form=form %}
-                    <button type="submit" class="button">Tambah Experience</button>
-                    <a href="{% url 'main:manage_experience' %}" class="button button-secondary">Batal</a>
-                </form>
-            </div>
-        </section>
-    </main>
-{% endblock content %}
+{% extends "form_page.html" %}
+
+{% block page_title %}Add Experience{% endblock %}
+{% block form_heading %}Tambahkan Experience{% endblock %}
+{% block form_action %}{% url 'main:create_experience' %}{% endblock %}
+{% block submit_label %}Tambah Experience{% endblock %}
+{% block cancel_url %}{% url 'main:manage_experience' %}{% endblock %}

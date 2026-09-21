@@ -13,7 +13,8 @@
 
 {% block cards %}
     {% for project in project_list %}
-        {% include "components/project_card.html" with project=project card_footer_template="components/project_delete_modal.html" %}
+        {% url 'main:update_project' project.id as edit_url %}
+        {% include "components/project_card.html" with project=project card_url=edit_url card_footer_template="components/project_delete_modal.html" %}
     {% empty %}
         {% if title_query %}
         <p class="empty-state">Tidak ada proyek dengan nama tersebut.</p>

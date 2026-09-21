@@ -13,7 +13,8 @@
 
 {% block cards %}
     {% for exp in experience_list %}
-        {% include "components/experience_card.html" with experience=exp card_footer_template="components/experience_delete_modal.html" %}
+        {% url 'main:update_experience' exp.id as edit_url %}
+        {% include "components/experience_card.html" with experience=exp card_url=edit_url card_footer_template="components/experience_delete_modal.html" %}
     {% empty %}
         {% if title_query %}
         <p class="empty-state">Tidak ada experience dengan nama tersebut.</p>

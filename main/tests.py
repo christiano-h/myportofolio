@@ -116,6 +116,8 @@ class UrlRoutingTests(TestCase):
             ("main:manage_projects", [], "/projects/manage/"),
             ("main:delete_experience", [UUID_TEST], f"/experience/manage/{UUID_TEST}/delete/"),
             ("main:delete_project", [7], "/projects/manage/7/delete/"),
+            ("main:update_experience", [UUID_TEST], f"/experience/manage/{UUID_TEST}/update/"),
+            ("main:update_project", [7], "/projects/manage/7/update/"),
             ("main:get_projects_json", [], "/api/projects/"),
             ("main:get_experiences_json", [], "/api/experiences/"),
         ]
@@ -703,3 +705,150 @@ class NavigasiDanRuteManageTests(TestCase):
                 r = self.client.get(reverse(nama))
                 self.assertNotContains(r, "manage-page")
 
+
+
+class UpdateProjectViewTests(TestCase):
+    """Halaman update /projects/manage/<pk>/update/.
+
+    Memakai primary key seperti delete_project, jadi judul bebas diubah dan
+    tidak terpengaruh judul kembar.
+    """
+
+    def setUp(self):
+        Project.objects.all().delete()
+        self.project = Project.objects.create(
+            title="SINTAKS", description="Deskripsi lama", tech_stack="Django",
+            thumbnail="/static/css/img/sintaks.jpg",
+            project_url="https://example.com/lama")
+
+    def test_get_menampilkan_data_lama(self):
+        r = self.client.get(reverse("main:update_project", args=[self.project.pk]))
+        self.assertEqual(r.status_code, 200)
+        self.assertTemplateUsed(r, "project_update.html")
+        self.assertContains(r, "value=\"SINTAKS\"")
+        self.assertContains(r, "Deskripsi lama")
+
+    def test_post_valid_mengubah_record_yang_sama(self):
+        r = self.client.post(
+            reverse("main:update_project", args=[self.project.pk]),
+            {"title": "SINTAKS BARU", "tech_stack": "Django, PostgreSQL",
+             "thumbnail": "https://example.com/gambar.jpg",
+             "project_url": "https://example.com/baru",
+             "description": "Deskripsi baru", "content": "Isi baru"},
+            follow=True)
+        self.assertRedirects(r, reverse("main:manage_projects"))
+        self.assertEqual(Project.objects.count(), 1)
+        self.assertEqual(Project.objects.get().pk, self.project.pk)
+        self.project.refresh_from_db()
+        self.assertEqual(self.project.title, "SINTAKS BARU")
+        self.assertEqual(self.project.description, "Deskripsi baru")
+        self.assertContains(r, "Project berhasil diperbarui!")
+
+    def test_post_tidak_valid_menampilkan_error_dan_mempertahankan_input(self):
+        r = self.client.post(
+            reverse("main:update_project", args=[self.project.pk]),
+            {"title": "", "description": "masih ini"})
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(r.context["form"].errors)
+        self.assertContains(r, "masih ini")
+        self.project.refresh_from_db()
+        self.assertEqual(self.project.title, "SINTAKS")
+
+    def test_tombol_batal_menuju_manage(self):
+        r = self.client.get(reverse("main:update_project", args=[self.project.pk]))
+        self.assertContains(r, reverse("main:manage_projects"))
+
+    def test_update_boleh_mengubah_judul(self):
+        url = reverse("main:update_project", args=[self.project.pk])
+        self.client.post(url, {"title": "Judul/Baru", "description": "x"})
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "Judul/Baru")
+
+    def test_update_tetap_bekerja_saat_ada_judul_kembar(self):
+        kembar = Project.objects.create(title="SINTAKS")
+        self.client.post(
+            reverse("main:update_project", args=[kembar.pk]),
+            {"title": "SINTAKS", "description": "yang diubah"})
+        kembar.refresh_from_db()
+        self.assertEqual(kembar.description, "yang diubah")
+        self.project.refresh_from_db()
+        self.assertEqual(self.project.description, "Deskripsi lama")
+
+    def test_pk_tidak_ada_404(self):
+        r = self.client.get(reverse("main:update_project", args=[999999]))
+        self.assertEqual(r.status_code, 404)
+
+    def test_pk_bukan_angka_404(self):
+        self.assertEqual(self.client.get("/projects/manage/X/update/").status_code, 404)
+
+    def test_kartu_manage_menuju_form_update(self):
+        r = self.client.get(reverse("main:manage_projects"))
+        self.assertContains(r, reverse("main:update_project", args=[self.project.pk]))
+
+    def test_kartu_publik_tetap_menuju_detail(self):
+        r = self.client.get(reverse("main:show_projects"))
+        self.assertContains(r, reverse("main:show_project_detail", args=[self.project.title]))
+        self.assertNotContains(r, reverse("main:update_project", args=[self.project.pk]))
+
+    def test_data_baru_tampil_di_daftar_dan_detail(self):
+        self.client.post(
+            reverse("main:update_project", args=[self.project.pk]),
+            {"title": "TERBARU", "description": "deskripsi anyar"})
+        self.assertContains(self.client.get(reverse("main:show_projects")), "TERBARU")
+        self.assertContains(
+            self.client.get(reverse("main:show_project_detail", args=["TERBARU"])),
+            "deskripsi anyar")
+
+
+class UpdateExperienceViewTests(TestCase):
+    """Halaman update /experience/manage/<pk>/update/ (pk UUID, seperti delete)."""
+
+    def setUp(self):
+        Experience.objects.all().delete()
+        self.experience = Experience.objects.create(
+            title="RISTEK", job_title="Anggota", summary="Ringkasan lama")
+
+    def test_get_menampilkan_data_lama(self):
+        r = self.client.get(reverse("main:update_experience", args=[self.experience.pk]))
+        self.assertEqual(r.status_code, 200)
+        self.assertTemplateUsed(r, "experience_update.html")
+        self.assertContains(r, "value=\"RISTEK\"")
+        self.assertContains(r, "Ringkasan lama")
+
+    def test_post_valid_mengubah_record_yang_sama(self):
+        r = self.client.post(
+            reverse("main:update_experience", args=[self.experience.pk]),
+            {"title": "RISTEK BARU", "job_title": "Ketua", "category": "volunteer",
+             "thumbnail": "", "summary": "Ringkasan baru", "content": "", "ended_at": ""},
+            follow=True)
+        self.assertRedirects(r, reverse("main:manage_experience"))
+        self.assertEqual(Experience.objects.count(), 1)
+        self.experience.refresh_from_db()
+        self.assertEqual(self.experience.title, "RISTEK BARU")
+        self.assertEqual(self.experience.job_title, "Ketua")
+        self.assertContains(r, "Experience berhasil diperbarui!")
+
+    def test_post_tidak_valid_mempertahankan_input(self):
+        r = self.client.post(
+            reverse("main:update_experience", args=[self.experience.pk]),
+            {"title": "", "summary": "masih ini"})
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(r.context["form"].errors)
+        self.assertContains(r, "masih ini")
+
+    def test_pk_tidak_ada_404(self):
+        r = self.client.get(reverse("main:update_experience", args=[UUID_TEST]))
+        self.assertEqual(r.status_code, 404)
+
+    def test_pk_bukan_uuid_404(self):
+        self.assertEqual(self.client.get("/experience/manage/X/update/").status_code, 404)
+
+    def test_kartu_manage_menuju_form_update(self):
+        r = self.client.get(reverse("main:manage_experience"))
+        self.assertContains(r, reverse("main:update_experience", args=[self.experience.pk]))
+
+    def test_kartu_publik_tetap_menuju_detail(self):
+        r = self.client.get(reverse("main:show_experience"))
+        self.assertContains(r, reverse("main:show_experience_detail", args=[self.experience.title]))
+        self.assertNotContains(r, reverse("main:update_experience", args=[self.experience.pk]))
