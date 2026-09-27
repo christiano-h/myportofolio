@@ -3,17 +3,30 @@ from django.core import serializers
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 
+from django.contrib.auth import login, logout
+from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
+
+from django.contrib.auth.decorators import login_required  
+from django.core.exceptions import PermissionDenied        
+
+from django.urls import reverse
+from django.utils.http import url_has_allowed_host_and_scheme
+
 from main.forms import ExperienceForm, ProjectForm
 from main.models import Experience, Project
 
+import datetime
+
 
 def show_main(request):
+    last_login = request.COOKIES.get("last_login", 'Belum ada sesi login / Cookie tidak ditemukan')
     context = {
         "name": "Christiano H",
         "npm": "2506615280",
         "study_program": "S1 Ilmu Komputer",
         "bio": "Iya ini bio, gatau mau nulis apa soalnya abis dihujat sama Yasmin. Jadi yaudah sekarang gini aja deh :d (Yasmin jahat)",
         "project_list": Project.objects.all(),
+        "last_login": last_login,
     }
     return render(request, "index.html", context)
 
@@ -36,13 +49,15 @@ def show_experience(request):
     }
     return render(request, "experience.html", context)
 
-
+@login_required(login_url="/login/")
 def manage_experience(request):
     """Halaman manage /experience/manage/ (tambah, cari, & hapus experience).
 
     Mendukung pencarian `?title=` supaya halaman ini bisa memakai kerangka yang
     sama dengan /projects/manage/ (`templates/manage.html`).
     """
+    if not request.user.is_superuser:
+        raise PermissionDenied
     title_query = request.GET.get("title", "").strip()
     experiences = Experience.objects.all().order_by("-started_at")
 
@@ -75,7 +90,7 @@ def get_projects_json(request):
     if title_query:
         projects = projects.filter(title__icontains=title_query)
 
-    projects_json = serializers.serialize("json", projects)
+    projects_json = serializers.serialize("json", projects, use_natural_foreign_keys=True)
     return HttpResponse(projects_json, content_type="application/json")
 
 
@@ -118,9 +133,11 @@ def show_projects(request):
     }
     return render(request, "project.html", context)
 
-
+@login_required(login_url="/login/")
 def manage_projects(request):
     """Halaman manage /projects/manage/ (tambah & hapus project)."""
+    if not request.user.is_superuser:
+        raise PermissionDenied
     context = {
         "name": "Christiano H",
         "project_list": _projects_from_json(request),
@@ -137,8 +154,11 @@ def show_project_detail(request, title):
     }
     return render(request, "project_detail.html", context)
 
-
+@login_required(login_url="/login/")
 def create_experience(request):
+    if not request.user.is_superuser:
+        raise PermissionDenied
+
     form = ExperienceForm(request.POST or None)
 
     if request.method == "POST" and form.is_valid():
@@ -152,8 +172,11 @@ def create_experience(request):
     }
     return render(request, "experience_form.html", context)
 
-
+@login_required(login_url="/login/")
 def create_project(request):
+    if not request.user.is_superuser:
+        raise PermissionDenied
+    
     form = ProjectForm(request.POST or None)
 
     if request.method == "POST" and form.is_valid():
@@ -178,7 +201,7 @@ def get_experiences_json(request):
     experiences_json = serializers.serialize("json", experiences)
     return HttpResponse(experiences_json, content_type="application/json")
 
-
+@login_required(login_url="/login/")
 def delete_project(request, project_id):
     """Hapus project berdasarkan primary key-nya.
 
@@ -196,9 +219,11 @@ def delete_project(request, project_id):
 
     return redirect("main:manage_projects")
 
-
+@login_required(login_url="/login/")
 def delete_experience(request, experience_id):
     """Hapus experience berdasarkan primary key-nya (UUID)."""
+    if not request.user.is_superuser:
+        raise PermissionDenied
     experience = get_object_or_404(Experience, pk=experience_id)
 
     if request.method == "POST":
@@ -208,7 +233,7 @@ def delete_experience(request, experience_id):
 
     return redirect("main:manage_experience")
 
-
+@login_required(login_url="/login/")
 def update_experience(request, experience_id):
     """Ubah experience berdasarkan primary key-nya.
 
@@ -217,6 +242,8 @@ def update_experience(request, experience_id):
     (alamat lama mati setelah judul diubah, dan judul kembar membuat
     `get_object_or_404` melempar MultipleObjectsReturned alias 500).
     """
+    if not request.user.is_superuser:
+        raise PermissionDenied
     experience = get_object_or_404(Experience, pk=experience_id)
     form = ExperienceForm(request.POST or None, instance=experience)
 
@@ -232,8 +259,10 @@ def update_experience(request, experience_id):
     }
     return render(request, "experience_update.html", context)
 
-
+@login_required(login_url="/login/")
 def update_project(request, project_id):
+    if not request.user.is_superuser:
+        raise PermissionDenied
     """Ubah project berdasarkan primary key-nya (alasan sama seperti experience)."""
     project = get_object_or_404(Project, pk=project_id)
     form = ProjectForm(request.POST or None, instance=project)
@@ -249,3 +278,60 @@ def update_project(request, project_id):
         "project": project,
     }
     return render(request, "project_update.html", context)
+
+# Tanpa cek is_superuser: semua akun yang sudah login boleh memberi star
+@login_required(login_url="/login/")
+def toggle_star(request, project_id):
+    project = get_object_or_404(Project, pk=project_id)
+
+    if request.method == "POST":
+        # Kalau akun ini sudah pernah memberi star, batalkan star-nya.
+        # Kalau belum, tambahkan star.
+        if request.user in project.starred_by.all():
+            project.starred_by.remove(request.user)
+        else:
+            project.starred_by.add(request.user)
+
+    next_url = request.POST.get("next")
+    if not next_url or not url_has_allowed_host_and_scheme(
+        next_url, allowed_hosts={request.get_host()}
+    ):
+        next_url = reverse("main:show_projects")
+    return redirect(next_url)
+
+
+def register(request):
+    form = UserCreationForm(request.POST or None)
+
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, "Akun berhasil dibuat. Silakan login.")
+        return redirect("main:login")
+
+    context = {
+        "name": "Christiano H",
+        "form": form,
+    }
+    return render(request, "register.html", context)
+
+def login_user(request):
+    form = AuthenticationForm(request, data=request.POST or None)
+
+    if request.method == "POST" and form.is_valid():
+        user = form.get_user()
+        login(request, form.get_user())
+        response = redirect("main:show_main")
+        response.set_cookie("last_login", datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+        return response
+
+    context = {
+        "name": "Christiano H",
+        "form": form,
+    }
+    return render(request, "login.html", context)
+
+def logout_user(request):
+    logout(request)
+    response = redirect("main:show_main")
+    response.delete_cookie("last_login")
+    return response
