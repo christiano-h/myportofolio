@@ -815,7 +815,8 @@ main {
 
 /* Berlaku untuk tombol apa pun di grup, tanpa bergantung kelas .button */
 .button-group>*,
-.experience-status>* {
+.experience-status>*,
+.star-form>* {
     flex: 1 1 0;
     min-width: 0;
     height: auto;
@@ -824,7 +825,8 @@ main {
 .button,
 .button-secondary,
 .button-danger,
-.button-search {
+.button-search,
+.button-star{
     display: inline-flex;
     justify-content: center;
     align-items: center;
@@ -865,6 +867,35 @@ main {
 
 .button-danger:hover {
     box-shadow: #b42318 0 0 16px;
+}
+
+.button-star {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    gap: 0.4rem;   /* jarak ikon - label - jumlah */
+}
+
+.button-star:hover {
+    color: var(--text-primary);
+    border-color: var(--border-hover);
+}
+
+.button-star.is-starred {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--on-accent);
+}
+
+.star-count {
+    padding: 0.05rem 0.4rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.15);
+    font-size: 0.8rem;
+}
+
+.button-star.is-starred .star-count {
+    background: rgba(10, 10, 10, 0.15);
 }
 
 /* ===== PESAN FLASH (django.contrib.messages) ===== */
@@ -927,7 +958,8 @@ body.manage-page .experience-section {
     font-size: 0.9rem;
 }
 
-.experience-status {
+.experience-status,
+.star-form{
     display: flex;
     align-items: stretch;
     justify-content: center;
@@ -959,7 +991,8 @@ body.manage-page .experience-section {
 
 /* Baris aksi di bawah kartu: tombol hapus (komponen delete modal) dan tautan
    luar "Lihat Project" di halaman publik /projects/. */
-.project-card-outline>.experience-status {
+.project-card-outline>.experience-status,
+.project-card-outline>.star-form {
     padding: 0.75rem 0.1rem 0.5rem;
 }
 

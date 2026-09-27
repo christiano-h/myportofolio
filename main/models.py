@@ -1,5 +1,6 @@
 import uuid
 from django.db import models
+from django.contrib.auth.models import User
 
 
 class Experience(models.Model):
@@ -21,6 +22,9 @@ class Experience(models.Model):
     content = models.TextField(blank=True, null=True)   # isi blog halaman detail
     started_at = models.DateTimeField(auto_now_add=True)
     ended_at = models.DateTimeField(blank=True, null=True)
+    starred_by = models.ManyToManyField(
+        User, related_name="starred_experiences", blank=True
+    )
 
     def __str__(self):
         if self.job_title:
@@ -39,15 +43,12 @@ class Project(models.Model):
     tech_stack = models.CharField(max_length=200, blank=True, null=True)   # teks bebas, mis. "Django, PostgreSQL"
     project_url = models.URLField(blank=True, null=True)   # link demo/repo
     content = models.TextField(blank=True, null=True)   # isi blog halaman detail
+    starred_by = models.ManyToManyField(
+        User, related_name="starred_projects", blank=True
+    )
     
     @property
     def project_image_url(self):
-        """URL gambar siap dipakai di <img src>.
-
-        Alias eksplisit dari `thumbnail` supaya template tidak perlu tahu
-        bagaimana gambar disimpan; kalau format penyimpanan berubah
-        (mis. hanya menyimpan FILE_ID), cukup ubah di sini.
-        """
         return self.thumbnail
 
     def __str__(self):

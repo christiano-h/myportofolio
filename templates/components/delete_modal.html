@@ -19,7 +19,10 @@ Catatan: modal ini butuh Popover API (Chrome 114+, Safari 17+, Firefox 125+).
 Di browser lama, tombol tidak akan membuka apa pun.
 {% endcomment %}
 
-<p class="experience-status">
+<div class="experience-status">
+    {% if star_template %}
+        {% include star_template %}
+    {% endif %}
     {% if action_url %}
     <a href="{{ action_url }}"
        class="button button-secondary"
@@ -32,7 +35,7 @@ Di browser lama, tombol tidak akan membuka apa pun.
             title="{{ aria_label }}">
         {{ trigger_label }}
     </button>
-</p>
+</div>
 
 <div id="{{ modal_prefix }}-{{ object_id }}"
      class="delete-modal"

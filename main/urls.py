@@ -7,6 +7,7 @@ from main.views import (
     delete_project,
     get_experiences_json,
     get_projects_json,
+    logout_user,
     manage_experience,
     manage_projects,
     show_experience,
@@ -14,8 +15,11 @@ from main.views import (
     show_main,
     show_project_detail,
     show_projects,
+    toggle_star,
     update_experience,
     update_project,
+    register,
+    login_user,
 )
 
 app_name = "main"
@@ -28,9 +32,6 @@ urlpatterns = [
     path("projects/", show_projects, name="show_projects"),
 
     # === Halaman manage (add & remove) ===
-    # `experience/manage/` dan `projects/manage/` WAJIB didaftarkan sebelum
-    # `<str:title>` di bawah, kalau tidak kata "manage" ikut tertangkap sebagai
-    # judul (judul "manage" tidak ada -> 404).
     path("experience/manage/", manage_experience, name="manage_experience"),
     path("experience/manage/add/", create_experience, name="create_experience"),
     path("experience/manage/<uuid:experience_id>/delete/", delete_experience, name="delete_experience"),
@@ -41,11 +42,14 @@ urlpatterns = [
     path("projects/manage/<int:project_id>/update/", update_project, name="update_project"),
 
     # === Halaman blog (detail) ===
-    # Pakai `<path:title>` (bukan `<str:title>`) supaya judul yang mengandung
-    # "/" tetap bisa dibuka, mis. "UI/UX Redesign". `<str:title>` menolak "/"
-    # sehingga `{% url %}` di kartu melempar NoReverseMatch (halaman 500).
     path("experience/<path:title>/", show_experience_detail, name="show_experience_detail"),
+    
+    path("projects/<int:project_id>/star/", toggle_star, name="toggle_star"),
     path("projects/<path:title>/", show_project_detail, name="show_project_detail"),
+
+    path("register/", register, name="register"),
+    path("login/", login_user, name="login"),
+    path("logout/", logout_user, name="logout"),
 
     path("api/projects/", get_projects_json, name="get_projects_json"),
     path("api/experiences/", get_experiences_json, name="get_experiences_json"),
