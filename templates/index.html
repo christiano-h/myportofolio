@@ -3,133 +3,137 @@
 {% block body_class %}{% endblock body_class %}
 
 {% block content %}
-    <main>
-        <section class="hero" id="profile">
-            <div class="container hero-grid">
-                <div class="hero-identity">
-                    <p class="hero-kicker">Computer Science &middot; Universitas Indonesia</p>
-                    <h1><em>Ano</em></h1>
-                </div>
-                <div class="hero-photo">
-                    <div class="photo-block"></div>
-                    <img class="avatar" src="static/css/img/kepo-ini-orang-ganteng.jpg" alt="Ano's Avatar">
-                </div>
-                <div class="hero-details">
-                    <p class="bio">{{ bio }}</p>
-                    <dl class="meta-list">
-                        <div class="meta-row">
-                            <dt>NPM</dt>
-                            <dd>{{ npm }}</dd>
-                        </div>
-                        <div class="meta-row">
-                            <dt>Program</dt>
-                            <dd>{{ study_program }}</dd>
-                        </div>
-                    </dl>
-                    <div class="social-links"> <!--Ini saya sengaja menambahkan logo dari masing-masing tombol-->
-                        <a href="https://github.com/christiano-h" class="social-link">
-                            <img src="static/css/img/logo_github.svg" width="18" height="18"
-                                style="width:18px;height:18px;filter:invert(1)" alt="GitHub"> GitHub
-                        </a>
-                        <a href="https://www.linkedin.com/in/christiano-hosea/" class="social-link">
-                            <img src="static/css/img/logo_linkedin.svg" width="18" height="18"
-                                style="width:18px;height:18px;filter:invert(1)" alt="LinkedIn"> Linkedin
-                        </a>
-                        <a href="mailto:christiano.imannuel@gmail.com" class="social-link">
-                            <img src="static/css/img/logo_gmail.svg" width="18" height="18"
-                                style="width:18px;height:18px;filter:invert(1)" alt="Email"> Email
-                        </a>
+<main>
+    <section class="hero" id="profile">
+        <div class="container hero-grid">
+            <div class="hero-identity">
+                <p class="hero-kicker">Computer Science &middot; Universitas Indonesia</p>
+                <h1><em>Ano</em></h1>
+            </div>
+            <div class="hero-photo">
+                <div class="photo-block"></div>
+                <img class="avatar" src="static/css/img/kepo-ini-orang-ganteng.jpg" alt="Ano's Avatar">
+            </div>
+            <div class="hero-details">
+                <p class="bio">{{ bio }}</p>
+                <dl class="meta-list">
+                    <div class="meta-row">
+                        <dt>NPM</dt>
+                        <dd>{{ npm }}</dd>
                     </div>
+                    <div class="meta-row">
+                        <dt>Program</dt>
+                        <dd>{{ study_program }}</dd>
+                    </div>
+                    <div class="meta-row">
+                        <dt>Sesi Terakhir Login</dt>
+                        <dd>{{ last_login }}</dd>
+                    </div>
+                </dl>
+                <div class="social-links"> <!--Ini saya sengaja menambahkan logo dari masing-masing tombol-->
+                    <a href="https://github.com/christiano-h" class="social-link">
+                        <img src="static/css/img/logo_github.svg" width="18" height="18"
+                            style="width:18px;height:18px;filter:invert(1)" alt="GitHub"> GitHub
+                    </a>
+                    <a href="https://www.linkedin.com/in/christiano-hosea/" class="social-link">
+                        <img src="static/css/img/logo_linkedin.svg" width="18" height="18"
+                            style="width:18px;height:18px;filter:invert(1)" alt="LinkedIn"> Linkedin
+                    </a>
+                    <a href="mailto:christiano.imannuel@gmail.com" class="social-link">
+                        <img src="static/css/img/logo_gmail.svg" width="18" height="18"
+                            style="width:18px;height:18px;filter:invert(1)" alt="Email"> Email
+                    </a>
                 </div>
             </div>
-        </section>
+        </div>
+    </section>
 
-        <section class="projects" id="projects"> <!-- BARU -->
-            <div class="container">
-                <h1 class="projects-title">Projects</h1>
-                <div class="portfolio-track" aria-label="Portofolio">
-                    {% for project in project_list %}
-                    <div class="project-card-outline">
-                        <span class="glare-item-top"></span>
-                        <a href="{% url 'main:show_project_detail' project.title %}" class="project-card-link">
-                            <article class="portfolio-card project-card">
-                                <span class="glare-item-top"></span>
-                                {% if project.thumbnail %}
-                                <img class="portfolio-img" src="{{ project.thumbnail }}" alt="{{ project.title }}">
-                                {% endif %}
-                                <h3 class="portfolio-title">{{ project.title }}</h3>
-                                <p class="portfolio-desc">{{ project.description }}</p>
-                            </article>
-                        </a>
-                    </div>
-                    {% empty %}
-                    <p>Belum ada proyek untuk ditampilkan.</p>
-                    {% endfor %}
+    <section class="projects" id="projects"> <!-- BARU -->
+        <div class="container">
+            <h1 class="projects-title">Projects</h1>
+            <div class="portfolio-track" aria-label="Portofolio">
+                {% for project in project_list %}
+                <div class="project-card-outline">
+                    <span class="glare-item-top"></span>
+                    <a href="{% url 'main:show_project_detail' project.title %}" class="project-card-link">
+                        <article class="portfolio-card project-card">
+                            <span class="glare-item-top"></span>
+                            {% if project.thumbnail %}
+                            <img class="portfolio-img" src="{{ project.thumbnail }}" alt="{{ project.title }}">
+                            {% endif %}
+                            <h3 class="portfolio-title">{{ project.title }}</h3>
+                            <p class="portfolio-desc">{{ project.description }}</p>
+                        </article>
+                    </a>
                 </div>
+                {% empty %}
+                <p>Belum ada proyek untuk ditampilkan.</p>
+                {% endfor %}
             </div>
-        </section>
-    </main>
+        </div>
+    </section>
+</main>
 {% endblock content %}
 
 {% block scripts %}
-    <script>
-        (function () {
-            var photo = document.querySelector('.hero-photo');
-            if (!photo) return;
-            photo.addEventListener('click', function () {
-                photo.classList.add('tapped');
-                clearTimeout(photo._t);
-                photo._t = setTimeout(function () {
-                    photo.classList.remove('tapped');
-                }, 200);
-            });
-        })();
+<script>
+    (function () {
+        var photo = document.querySelector('.hero-photo');
+        if (!photo) return;
+        photo.addEventListener('click', function () {
+            photo.classList.add('tapped');
+            clearTimeout(photo._t);
+            photo._t = setTimeout(function () {
+                photo.classList.remove('tapped');
+            }, 200);
+        });
+    })();
 
-        (function () {
-            var track = document.querySelector('.portfolio-track');
-            if (!track) return;
-            var cards = [].slice.call(track.querySelectorAll('.portfolio-card'));
-            if (!cards.length) return;
+    (function () {
+        var track = document.querySelector('.portfolio-track');
+        if (!track) return;
+        var cards = [].slice.call(track.querySelectorAll('.portfolio-card'));
+        if (!cards.length) return;
 
-            function update() {
-                // Carousel hanya aktif kalau isinya overflow (bisa digeser)
-                var isCarousel = track.scrollWidth > track.clientWidth + 1;
-                if (!isCarousel) {
-                    cards.forEach(function (c) {
-                        c.classList.remove('is-active');
-                        var outline = c.closest('.project-card-outline');
-                        if (outline) outline.classList.remove('is-active');
-                    });
-                    return;
-                }
-                // Cari kartu yang paling dekat ke tengah track
-                var rect = track.getBoundingClientRect();
-                var center = rect.left + rect.width / 2;
-                var best = cards[0], bestDist = Infinity;
-                cards.forEach(function (card) {
-                    var r = card.getBoundingClientRect();
-                    var dist = Math.abs((r.left + r.width / 2) - center);
-                    if (dist < bestDist) { bestDist = dist; best = card; }
-                });
+        function update() {
+            // Carousel hanya aktif kalau isinya overflow (bisa digeser)
+            var isCarousel = track.scrollWidth > track.clientWidth + 1;
+            if (!isCarousel) {
                 cards.forEach(function (c) {
-                    var active = c === best;
-                    c.classList.toggle('is-active', active);
+                    c.classList.remove('is-active');
                     var outline = c.closest('.project-card-outline');
-                    if (outline) outline.classList.toggle('is-active', active);
+                    if (outline) outline.classList.remove('is-active');
                 });
+                return;
             }
+            // Cari kartu yang paling dekat ke tengah track
+            var rect = track.getBoundingClientRect();
+            var center = rect.left + rect.width / 2;
+            var best = cards[0], bestDist = Infinity;
+            cards.forEach(function (card) {
+                var r = card.getBoundingClientRect();
+                var dist = Math.abs((r.left + r.width / 2) - center);
+                if (dist < bestDist) { bestDist = dist; best = card; }
+            });
+            cards.forEach(function (c) {
+                var active = c === best;
+                c.classList.toggle('is-active', active);
+                var outline = c.closest('.project-card-outline');
+                if (outline) outline.classList.toggle('is-active', active);
+            });
+        }
 
-            var ticking = false;
-            track.addEventListener('scroll', function () {
-                if (!ticking) {
-                    requestAnimationFrame(function () { update(); ticking = false; });
-                    ticking = true;
-                }
-            }, { passive: true });
+        var ticking = false;
+        track.addEventListener('scroll', function () {
+            if (!ticking) {
+                requestAnimationFrame(function () { update(); ticking = false; });
+                ticking = true;
+            }
+        }, { passive: true });
 
-            window.addEventListener('resize', update);
-            window.addEventListener('load', update);
-            update();
-        })();
-    </script>
+        window.addEventListener('resize', update);
+        window.addEventListener('load', update);
+        update();
+    })();
+</script>
 {% endblock scripts %}
