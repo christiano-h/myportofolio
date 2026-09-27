@@ -23,7 +23,7 @@ kedua halaman konsisten. Tambah/hapus ada di /projects/manage/.
                 {% include "components/list_search.html" with placeholder="Cari berdasarkan nama proyek" %}
                 <div class="portfolio-track" aria-label="Projects">
                     {% for project in project_list %}
-                        {% include "components/project_card.html" with project=project %}
+                        {% include "components/project_card.html" with project=project card_footer_template="components/project_star.html" %}
                     {% empty %}
                         {% if title_query %}
                         <p class="empty-state">Tidak ada proyek dengan nama tersebut.</p>

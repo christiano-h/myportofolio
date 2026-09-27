@@ -1,2 +1,2 @@
 {% url 'main:delete_project' project.id as delete_project_url %}
-{% include "components/delete_modal.html" with modal_prefix="delete-project" object_id=project.id delete_url=delete_project_url object_title=project.title trigger_label="Hapus Proyek" heading="Hapus Proyek?" aria_label="Hapus proyek ini" action_url=edit_url action_label="Ubah Proyek" %}
+{% include "components/delete_modal.html" with modal_prefix="delete-project" object_id=project.id delete_url=delete_project_url object_title=project.title trigger_label="Hapus Proyek" heading="Hapus Proyek?" aria_label="Hapus proyek ini" action_url=edit_url action_label="Ubah Proyek" star_template="components/project_star.html" %}
