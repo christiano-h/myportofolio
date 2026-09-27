@@ -152,6 +152,54 @@ h1,
     color: var(--text-primary);
 }
 
+/* Nama user di navbar: label, bukan link -> lebih redup + monospace */
+.nav-user {
+    font-family: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 0.85rem;
+    letter-spacing: 0.02em;
+    color: var(--text-subtle);
+    max-width: 9rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* HP: navbar kanan bisa digeser horizontal (swipe), tidak lagi meluber */
+@media (max-width: 720px) {
+    .site-header .container {
+        gap: 0.75rem;
+    }
+
+    .brand {
+        flex: 0 0 auto;
+        font-size: 1.15rem;
+    }
+
+    .site-header nav {
+        flex: 1 1 auto;
+        min-width: 0;
+        gap: 1.1rem;
+        overflow-x: auto;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior-x: contain;
+        scrollbar-width: none;
+    }
+
+    .site-header nav::-webkit-scrollbar {
+        display: none;
+    }
+
+    .site-header nav>* {
+        flex: 0 0 auto;
+        white-space: nowrap;
+        align-self: center;
+    }
+
+    .site-header nav a {
+        font-size: 0.9rem;
+    }
+}
+
 /* ===== HERO / PROFIL (identitas, bio, sosmed) ===== */
 .hero {
     padding: 3rem 0 3rem;
