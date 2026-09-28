@@ -16,12 +16,20 @@ Cakupan:
                 /experience/manage/ (tambah & hapus) & /experience/manage/add/
 10. Navigasi -> navbar tanpa link Projects, dan `manage` tidak tertangkap
                 sebagai <str:title>
+11. Autentikasi -> register/login/logout, cookie `last_login`, redirect ke
+                /login/?next=... untuk pengunjung tanpa login
+12. Otorisasi -> matriks 4 peran: anonim (redirect), pengguna biasa (hanya
+                baca + star), Editor (boleh ubah, tidak boleh tambah/hapus),
+                Owner/superuser (semua)
+13. Star      -> toggle POST, satu star per pengguna, dan hak aksesnya
+14. API aman  -> JSON tidak membocorkan data user/password
 
 Jalankan: python manage.py test
 """
 
 from datetime import timedelta
 
+from django.contrib.auth.models import Group, Permission, User
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
@@ -30,6 +38,48 @@ from main.models import Experience, Project
 
 # UUID tetap untuk menguji rute /experience/<uuid:...>/delete/.
 UUID_TEST = "3f1a4c6e-0000-4000-8000-000000000000"
+
+# Permission pembentuk peran "Editor": boleh MENGUBAH, tidak boleh menambah
+# (`add_*`) atau menghapus (`delete_*`).
+PERMISSION_EDITOR = ["change_project", "change_experience"]
+
+
+def buat_grup_editor():
+    """Buat/ambil grup "Editor" berisi PERMISSION_EDITOR untuk app main.
+
+    Di environment nyata grup ini dibuat manual lewat Django Admin; test membuat
+    grupnya sendiri supaya hasilnya tidak bergantung pada isi DB.
+    """
+    grup, _ = Group.objects.get_or_create(name="Editor")
+    grup.permissions.set(
+        Permission.objects.filter(
+            content_type__app_label="main", codename__in=PERMISSION_EDITOR
+        )
+    )
+    return grup
+
+
+def buat_user_editor(username="editor"):
+    """Pengguna biasa yang dinaikkan jadi Editor lewat grup "Editor"."""
+    user = User.objects.create_user(username=username, password="rahasia-editor")
+    user.groups.add(buat_grup_editor())
+    return user
+
+
+class AuthenticatedTestCase(TestCase):
+    """Base untuk test halaman manage/CRUD yang kini dilindungi login & permission.
+
+    Login sebagai superuser (= pemilik portofolio) supaya test lama tetap fokus
+    menguji perilaku halaman. Matriks hak aksesnya diuji terpisah di
+    ManageAccessTests dan EditorAccessTests.
+    """
+
+    def setUp(self):
+        super().setUp()
+        self.admin = User.objects.create_superuser(
+            username="admin", email="admin@example.com", password="rahasia-owner"
+        )
+        self.client.force_login(self.admin)
 
 
 class ExperienceModelTests(TestCase):
@@ -120,6 +170,10 @@ class UrlRoutingTests(TestCase):
             ("main:update_project", [7], "/projects/manage/7/update/"),
             ("main:get_projects_json", [], "/api/projects/"),
             ("main:get_experiences_json", [], "/api/experiences/"),
+            ("main:register", [], "/register/"),
+            ("main:login", [], "/login/"),
+            ("main:logout", [], "/logout/"),
+            ("main:toggle_star", [7], "/projects/7/star/"),
         ]
         for nama, args, diharapkan in kasus:
             with self.subTest(nama=nama, args=args):
@@ -139,7 +193,7 @@ class ShowMainViewTests(TestCase):
         response = self.client.get(reverse("main:show_main"))
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "index.html")
-        self.assertEqual(response.context["name"], "Christiano H")
+        self.assertEqual(response.context["name"], "ANO")
         self.assertEqual(response.context["npm"], "2506615280")
         self.assertEqual(response.context["study_program"], "S1 Ilmu Komputer")
         self.assertTrue(response.context["bio"])
@@ -172,6 +226,7 @@ class ExperienceDataMixin:
     """Data contoh untuk test halaman Experience (publik & manage)."""
 
     def setUp(self):
+        super().setUp()
         # Migrasi 0005 (seed RISTEK) juga jalan di DB test -> bersihkan dulu
         Experience.objects.all().delete()
         self.lama = Experience.objects.create(
@@ -235,7 +290,7 @@ class ShowExperienceViewTests(ExperienceDataMixin, TestCase):
         )
 
 
-class ManageExperienceViewTests(ExperienceDataMixin, TestCase):
+class ManageExperienceViewTests(ExperienceDataMixin, AuthenticatedTestCase):
     """/experience/manage/ -> daftar + tombol tambah & hapus."""
 
     def test_status_dan_template(self):
@@ -369,7 +424,7 @@ class FixtureTests(TestCase):
             self.assertEqual(self.client.get(u).status_code, 200, u)
 
 
-class DeleteViewTests(TestCase):
+class DeleteViewTests(AuthenticatedTestCase):
     """delete_project & delete_experience: hanya POST yang menghapus.
 
     URL-nya memakai primary key, bukan judul. Karena itu test di sini
@@ -379,6 +434,7 @@ class DeleteViewTests(TestCase):
     """
 
     def setUp(self):
+        super().setUp()
         Experience.objects.all().delete()
         Project.objects.all().delete()
         self.project = Project.objects.create(title="UI/UX Redesign")
@@ -441,6 +497,7 @@ class ProjectDataMixin:
     """Data contoh untuk test halaman Projects (publik & manage)."""
 
     def setUp(self):
+        super().setUp()
         Project.objects.all().delete()
         self.sintaks = Project.objects.create(
             title="SINTAKS",
@@ -535,7 +592,7 @@ class ShowProjectsViewTests(ProjectDataMixin, TestCase):
         self.assertEqual([p.title for p in r.context["project_list"]], ["SINTAKS"])
 
 
-class ManageProjectsViewTests(ProjectDataMixin, TestCase):
+class ManageProjectsViewTests(ProjectDataMixin, AuthenticatedTestCase):
     """/projects/manage/ -> daftar + tombol tambah & hapus."""
 
     def test_status_dan_template(self):
@@ -578,10 +635,11 @@ class ManageProjectsViewTests(ProjectDataMixin, TestCase):
         self.assertContains(r, "Tidak ada proyek dengan nama tersebut.")
 
 
-class CreateProjectViewTests(TestCase):
+class CreateProjectViewTests(AuthenticatedTestCase):
     """/projects/add/ -> ProjectForm, hanya POST valid yang menyimpan."""
 
     def setUp(self):
+        super().setUp()
         Project.objects.all().delete()
 
     def test_get_menampilkan_form(self):
@@ -639,10 +697,54 @@ class JsonApiViewTests(TestCase):
         self.assertEqual([d["fields"]["title"] for d in r.json()], ["RISTEK"])
 
 
-class CreateExperienceViewTests(TestCase):
+class JsonApiNoLeakTests(TestCase):
+    """JSON API tidak membocorkan identitas user (poin 14 docstring modul).
+
+    M2M `starred_by` diserialisasi dengan natural key, jadi yang terkirim adalah
+    username - bukan primary key user.
+    """
+
+    def setUp(self):
+        Experience.objects.all().delete()
+        Project.objects.all().delete()
+        self.user = User.objects.create_user(
+            "penggemar", email="penggemar@example.com", password="rahasia-user"
+        )
+        self.project = Project.objects.create(title="SINTAKS")
+        self.experience = Experience.objects.create(title="RISTEK")
+        self.project.starred_by.add(self.user)
+        self.experience.starred_by.add(self.user)
+
+    def _get_json(self, nama):
+        r = self.client.get(reverse(f"main:{nama}"))
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r["Content-Type"], "application/json")
+        return r
+
+    def test_starred_by_berisi_username_bukan_pk_user(self):
+        for nama in ["get_projects_json", "get_experiences_json"]:
+            with self.subTest(endpoint=nama):
+                data = self._get_json(nama).json()
+                self.assertEqual(data[0]["fields"]["starred_by"], [["penggemar"]])
+
+    def test_payload_tidak_memuat_kolom_pribadi_user(self):
+        for nama in ["get_projects_json", "get_experiences_json"]:
+            with self.subTest(endpoint=nama):
+                teks = self._get_json(nama).content.decode()
+                for terlarang in ["password", "email", "last_login", "is_superuser"]:
+                    self.assertNotIn(terlarang, teks)
+
+    def test_starred_by_kosong_tetap_list_kosong(self):
+        self.project.starred_by.clear()
+        data = self._get_json("get_projects_json").json()
+        self.assertEqual(data[0]["fields"]["starred_by"], [])
+
+
+class CreateExperienceViewTests(AuthenticatedTestCase):
     """/experience/add/ -> ExperienceForm, hanya POST valid yang menyimpan."""
 
     def setUp(self):
+        super().setUp()
         Experience.objects.all().delete()
 
     def test_get_menampilkan_form(self):
@@ -675,10 +777,11 @@ class CreateExperienceViewTests(TestCase):
         self.assertFalse(Experience.objects.exists())
 
 
-class NavigasiDanRuteManageTests(TestCase):
+class NavigasiDanRuteManageTests(AuthenticatedTestCase):
     """Navbar dengan link Profile/Project/Experience + rute `manage` tidak menabrak `<str:title>`."""
 
     def setUp(self):
+        super().setUp()
         Experience.objects.all().delete()
         Project.objects.all().delete()
 
@@ -707,7 +810,7 @@ class NavigasiDanRuteManageTests(TestCase):
 
 
 
-class UpdateProjectViewTests(TestCase):
+class UpdateProjectViewTests(AuthenticatedTestCase):
     """Halaman update /projects/manage/<pk>/update/.
 
     Memakai primary key seperti delete_project, jadi judul bebas diubah dan
@@ -715,6 +818,7 @@ class UpdateProjectViewTests(TestCase):
     """
 
     def setUp(self):
+        super().setUp()
         Project.objects.all().delete()
         self.project = Project.objects.create(
             title="SINTAKS", description="Deskripsi lama", tech_stack="Django",
@@ -801,10 +905,11 @@ class UpdateProjectViewTests(TestCase):
             "deskripsi anyar")
 
 
-class UpdateExperienceViewTests(TestCase):
+class UpdateExperienceViewTests(AuthenticatedTestCase):
     """Halaman update /experience/manage/<pk>/update/ (pk UUID, seperti delete)."""
 
     def setUp(self):
+        super().setUp()
         Experience.objects.all().delete()
         self.experience = Experience.objects.create(
             title="RISTEK", job_title="Anggota", summary="Ringkasan lama")
@@ -852,3 +957,277 @@ class UpdateExperienceViewTests(TestCase):
         r = self.client.get(reverse("main:show_experience"))
         self.assertContains(r, reverse("main:show_experience_detail", args=[self.experience.title]))
         self.assertNotContains(r, reverse("main:update_experience", args=[self.experience.pk]))
+
+class ManageAccessTests(TestCase):
+    """Matriks hak akses halaman manage & CRUD.
+
+    Anonim -> 302 ke /login/?next=...
+    Pengguna biasa -> 403 di semua aksi CRUD, tapi tetap boleh baca & star.
+    """
+
+    AKSI_CRUD = [
+        "manage_projects",
+        "manage_experience",
+        "create_project",
+        "create_experience",
+        "delete_project",
+        "delete_experience",
+        "update_project",
+        "update_experience",
+    ]
+
+    def setUp(self):
+        super().setUp()
+        Experience.objects.all().delete()
+        Project.objects.all().delete()
+        self.project = Project.objects.create(title="SINTAKS")
+        self.experience = Experience.objects.create(title="RISTEK")
+
+    def _url(self, nama):
+        if nama in ("delete_project", "update_project"):
+            return reverse(f"main:{nama}", args=[self.project.pk])
+        if nama in ("delete_experience", "update_experience"):
+            return reverse(f"main:{nama}", args=[self.experience.pk])
+        return reverse(f"main:{nama}")
+
+    def test_anonim_diarahkan_ke_login_beserta_next(self):
+        for nama in self.AKSI_CRUD:
+            with self.subTest(view=nama):
+                r = self.client.get(self._url(nama))
+                self.assertEqual(r.status_code, 302)
+                self.assertTrue(r["Location"].startswith("/login/"), r["Location"])
+
+    def test_anonim_tetap_bisa_membaca_halaman_publik(self):
+        for nama in ["show_main", "show_projects", "show_experience"]:
+            with self.subTest(view=nama):
+                self.assertEqual(self.client.get(reverse(f"main:{nama}")).status_code, 200)
+
+    def test_pengguna_biasa_ditolak_403(self):
+        self.client.force_login(
+            User.objects.create_user("biasa", password="rahasia-biasa")
+        )
+        for nama in self.AKSI_CRUD:
+            with self.subTest(view=nama):
+                self.assertEqual(self.client.get(self._url(nama)).status_code, 403)
+
+    def test_pengguna_biasa_tidak_bisa_mengubah_lewat_post(self):
+        self.client.force_login(
+            User.objects.create_user("biasa", password="rahasia-biasa")
+        )
+        r = self.client.post(reverse("main:create_project"), {"title": "Curang"})
+        self.assertEqual(r.status_code, 403)
+        self.assertFalse(Project.objects.filter(title="Curang").exists())
+
+    def test_pengguna_biasa_tetap_bisa_memberi_star(self):
+        user = User.objects.create_user("biasa", password="rahasia-biasa")
+        self.client.force_login(user)
+        self.client.post(reverse("main:toggle_star", args=[self.project.pk]))
+        self.assertTrue(self.project.starred_by.filter(pk=user.pk).exists())
+
+
+class EditorAccessTests(TestCase):
+    """Peran Editor: boleh mengubah data, tidak boleh menambah/menghapus."""
+
+    def setUp(self):
+        super().setUp()
+        Experience.objects.all().delete()
+        Project.objects.all().delete()
+        self.project = Project.objects.create(title="SINTAKS")
+        self.experience = Experience.objects.create(title="RISTEK")
+        self.editor = buat_user_editor()
+        self.client.force_login(self.editor)
+
+    def test_editor_hanya_punya_permission_change(self):
+        self.assertEqual(
+            set(self.editor.get_all_permissions()),
+            {"main.change_project", "main.change_experience"},
+        )
+
+    def test_editor_boleh_masuk_halaman_manage(self):
+        for nama in ["manage_projects", "manage_experience"]:
+            with self.subTest(view=nama):
+                self.assertEqual(self.client.get(reverse(f"main:{nama}")).status_code, 200)
+
+    def test_editor_boleh_mengubah_project(self):
+        r = self.client.post(
+            reverse("main:update_project", args=[self.project.pk]),
+            {"title": "SINTAKS BARU", "tech_stack": "", "thumbnail": "",
+             "project_url": "", "description": "diubah editor", "content": ""},
+            follow=True,
+        )
+        self.assertRedirects(r, reverse("main:manage_projects"))
+        self.project.refresh_from_db()
+        self.assertEqual(self.project.title, "SINTAKS BARU")
+
+    def test_editor_boleh_mengubah_experience(self):
+        r = self.client.post(
+            reverse("main:update_experience", args=[self.experience.pk]),
+            {"title": "RISTEK BARU", "job_title": "Ketua", "category": "volunteer",
+             "thumbnail": "", "summary": "diubah editor", "content": "", "ended_at": ""},
+            follow=True,
+        )
+        self.assertRedirects(r, reverse("main:manage_experience"))
+        self.experience.refresh_from_db()
+        self.assertEqual(self.experience.title, "RISTEK BARU")
+
+    def test_editor_tidak_boleh_menambah_atau_menghapus(self):
+        kasus = [
+            ("create_project", []),
+            ("create_experience", []),
+            ("delete_project", [self.project.pk]),
+            ("delete_experience", [self.experience.pk]),
+        ]
+        for nama, args in kasus:
+            with self.subTest(view=nama):
+                r = self.client.post(reverse(f"main:{nama}", args=args))
+                self.assertEqual(r.status_code, 403)
+        self.assertTrue(Project.objects.filter(pk=self.project.pk).exists())
+        self.assertTrue(Experience.objects.filter(pk=self.experience.pk).exists())
+
+    def test_tombol_tambah_dan_hapus_tidak_muncul_untuk_editor(self):
+        r = self.client.get(reverse("main:manage_projects"))
+        self.assertNotContains(r, reverse("main:create_project"))
+        self.assertNotContains(r, "Tambah Proyek")
+        self.assertNotContains(r, reverse("main:delete_project", args=[self.project.pk]))
+        # Tombol Ubah tetap ada supaya Editor bisa menjalankan tugasnya.
+        self.assertContains(r, reverse("main:update_project", args=[self.project.pk]))
+        self.assertContains(r, "Ubah Proyek")
+
+    def test_owner_melihat_tombol_tambah_ubah_dan_hapus(self):
+        owner = User.objects.create_superuser("owner", "owner@example.com", "rahasia-owner")
+        self.client.force_login(owner)
+        r = self.client.get(reverse("main:manage_projects"))
+        self.assertContains(r, reverse("main:create_project"))
+        self.assertContains(r, "Tambah Proyek")
+        self.assertContains(r, reverse("main:delete_project", args=[self.project.pk]))
+        self.assertContains(r, reverse("main:update_project", args=[self.project.pk]))
+
+
+class ToggleStarViewTests(TestCase):
+    """toggle_star: satu star per pengguna, wajib login, `next` divalidasi."""
+
+    def setUp(self):
+        super().setUp()
+        Project.objects.all().delete()
+        self.project = Project.objects.create(title="SINTAKS")
+        self.url = reverse("main:toggle_star", args=[self.project.pk])
+        self.user = User.objects.create_user("penggemar", password="rahasia-user")
+
+    def test_anonim_diarahkan_ke_login_dan_star_tidak_berubah(self):
+        r = self.client.post(self.url)
+        self.assertEqual(r.status_code, 302)
+        self.assertTrue(r["Location"].startswith("/login/"), r["Location"])
+        self.assertEqual(self.project.starred_by.count(), 0)
+
+    def test_post_menambah_lalu_post_kedua_membatalkan(self):
+        self.client.force_login(self.user)
+        self.client.post(self.url, {"next": reverse("main:show_projects")})
+        self.assertEqual(self.project.starred_by.count(), 1)
+        self.client.post(self.url, {"next": reverse("main:show_projects")})
+        self.assertEqual(self.project.starred_by.count(), 0)
+
+    def test_satu_pengguna_maksimal_satu_star(self):
+        """Relasi M2M bikin star kedua dari user yang sama tidak menambah baris."""
+        self.client.force_login(self.user)
+        self.client.post(self.url)
+        self.project.starred_by.add(self.user)
+        self.assertEqual(self.project.starred_by.filter(pk=self.user.pk).count(), 1)
+
+    def test_dua_pengguna_berbeda_menambah_dua_star(self):
+        lain = User.objects.create_user("lain", password="rahasia-user")
+        self.project.starred_by.add(self.user, lain)
+        self.assertEqual(self.project.starred_by.count(), 2)
+
+    def test_next_internal_dihormati(self):
+        self.client.force_login(self.user)
+        r = self.client.post(self.url, {"next": reverse("main:show_experience")})
+        self.assertRedirects(r, reverse("main:show_experience"))
+
+    def test_next_ke_host_luar_diabaikan(self):
+        self.client.force_login(self.user)
+        r = self.client.post(self.url, {"next": "https://jahat.example.com/"})
+        self.assertRedirects(r, reverse("main:show_projects"))
+
+    def test_get_tidak_mengubah_star(self):
+        self.client.force_login(self.user)
+        self.client.get(self.url)
+        self.assertEqual(self.project.starred_by.count(), 0)
+
+    def test_anonim_melihat_tautan_login_bukan_form_star(self):
+        r = self.client.get(reverse("main:show_projects"))
+        self.assertContains(r, "Login untuk memberi star")
+        self.assertNotContains(r, self.url)
+
+    def test_pengguna_login_melihat_form_star_bercsrf(self):
+        self.client.force_login(self.user)
+        r = self.client.get(reverse("main:show_projects"))
+        self.assertContains(r, self.url)
+        self.assertContains(r, "csrfmiddlewaretoken")
+        self.assertContains(r, "button-star")
+
+    def test_status_star_tampil_setelah_diberi(self):
+        self.project.starred_by.add(self.user)
+        self.client.force_login(self.user)
+        r = self.client.get(reverse("main:show_projects"))
+        self.assertContains(r, "is-starred")
+        self.assertContains(r, "Unstar")
+
+
+class ToggleStarExperienceViewTests(TestCase):
+    """toggle_experience_star: kembar `toggle_star`, tapi untuk Experience."""
+
+    def setUp(self):
+        super().setUp()
+        Experience.objects.all().delete()
+        self.experience = Experience.objects.create(title="RISTEK", job_title="Anggota")
+        self.url = reverse("main:toggle_experience_star", args=[self.experience.pk])
+        self.user = User.objects.create_user("penggemar", password="rahasia-user")
+
+    def test_anonim_diarahkan_ke_login_dan_star_tidak_berubah(self):
+        r = self.client.post(self.url)
+        self.assertEqual(r.status_code, 302)
+        self.assertTrue(r["Location"].startswith("/login/"), r["Location"])
+        self.assertEqual(self.experience.starred_by.count(), 0)
+
+    def test_post_menambah_lalu_post_kedua_membatalkan(self):
+        self.client.force_login(self.user)
+        self.client.post(self.url, {"next": reverse("main:show_experience")})
+        self.assertEqual(self.experience.starred_by.count(), 1)
+        self.client.post(self.url, {"next": reverse("main:show_experience")})
+        self.assertEqual(self.experience.starred_by.count(), 0)
+
+    def test_next_ke_host_luar_diabaikan(self):
+        self.client.force_login(self.user)
+        r = self.client.post(self.url, {"next": "https://jahat.example.com/"})
+        self.assertRedirects(r, reverse("main:show_experience"))
+
+    def test_rute_star_tidak_tertangkap_rute_detail(self):
+        """`experience/<path:title>/` juga cocok dengan URL ini, jadi urutannya penting."""
+        self.assertEqual(self.url, f"/experience/{self.experience.pk}/star/")
+        # Anonim -> 302 ke login. Kalau rute detail yang menang, hasilnya 404.
+        self.assertEqual(self.client.get(self.url).status_code, 302)
+
+    def test_halaman_publik_menampilkan_tombol_star(self):
+        r = self.client.get(reverse("main:show_experience"))
+        self.assertContains(r, "Login untuk memberi star")
+        self.assertNotContains(r, self.url)
+
+        self.client.force_login(self.user)
+        r = self.client.get(reverse("main:show_experience"))
+        self.assertContains(r, self.url)
+        self.assertContains(r, "csrfmiddlewaretoken")
+        self.assertContains(r, "button-star")
+
+    def test_status_star_tampil_setelah_diberi(self):
+        self.experience.starred_by.add(self.user)
+        self.client.force_login(self.user)
+        r = self.client.get(reverse("main:show_experience"))
+        self.assertContains(r, "is-starred")
+        self.assertContains(r, "Unstar")
+
+    def test_tombol_star_juga_muncul_di_halaman_manage(self):
+        self.client.force_login(buat_user_editor())
+        r = self.client.get(reverse("main:manage_experience"))
+        self.assertContains(r, self.url)
+        self.assertContains(r, "csrfmiddlewaretoken")
+
