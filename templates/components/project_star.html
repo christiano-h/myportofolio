@@ -1,3 +1,8 @@
+{% comment %}
+Tombol star satu project (wajib: project). Pengunjung tanpa login melihat tautan
+login, bukan form, karena `toggle_star` hanya untuk pengguna terautentikasi.
+{% endcomment %}
+{% if user.is_authenticated %}
 <form method="post" action="{% url 'main:toggle_star' project.id %}" class="star-form">
     {% csrf_token %}
     <input type="hidden" name="next" value="{{ request.path }}">
@@ -9,3 +14,14 @@
         <span class="star-count">{{ project.starred_by.count }}</span>
     </button>
 </form>
+{% else %}
+<div class="star-form">
+    <a href="{% url 'main:login' %}?next={{ request.path }}"
+       class="button button-star"
+       title="Login dulu untuk memberi star">
+        <span aria-hidden="true">★</span>
+        Login untuk memberi star
+        <span class="star-count">{{ project.starred_by.count }}</span>
+    </a>
+</div>
+{% endif %}

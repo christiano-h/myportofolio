@@ -1,0 +1,28 @@
+{% comment %}
+Tombol star satu experience (wajib: experience). Pengunjung tanpa login melihat
+tautan login, bukan form, karena `toggle_experience_star` hanya untuk pengguna
+terautentikasi. Kembar dari `project_star.html`.
+{% endcomment %}
+{% if user.is_authenticated %}
+<form method="post" action="{% url 'main:toggle_experience_star' experience.id %}" class="star-form">
+    {% csrf_token %}
+    <input type="hidden" name="next" value="{{ request.path }}">
+    <button type="submit"
+            class="button button-star{% if user in experience.starred_by.all %} is-starred{% endif %}"
+            title="{% if experience.starred_by.all %}Dibintangi oleh {{ experience.starred_by.all|join:', ' }}{% else %}Jadilah yang pertama memberi star{% endif %}">
+        <span aria-hidden="true">★</span>
+        {% if user in experience.starred_by.all %}Unstar{% else %}Star{% endif %}
+        <span class="star-count">{{ experience.starred_by.count }}</span>
+    </button>
+</form>
+{% else %}
+<div class="star-form">
+    <a href="{% url 'main:login' %}?next={{ request.path }}"
+       class="button button-star"
+       title="Login dulu untuk memberi star">
+        <span aria-hidden="true">★</span>
+        Login untuk memberi star
+        <span class="star-count">{{ experience.starred_by.count }}</span>
+    </a>
+</div>
+{% endif %}
