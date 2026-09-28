@@ -483,8 +483,7 @@ h1,
     margin: 0;
 }
 
-/* Thumbnail selalu dipotong 16:9 agar semua kartu punya tinggi seragam
-   di carousel (Experience, Projects, & index). */
+/* Thumbnail dipotong 16:9 supaya semua kartu seragam tingginya di carousel. */
 .portfolio-img {
     width: 100%;
     aspect-ratio: 16 / 9;
@@ -564,7 +563,6 @@ h1,
 }
 
 .experience-section h1 {
-    padding-bottom: 8px;
     align-self: center;
     font-size: 2rem;
 }
@@ -624,9 +622,7 @@ main {
     gap: 0;
 }
 
-/* Halaman daftar & manage: main tidak dipaksa mengisi viewport supaya tidak ada
-   pita kosong antara konten dan footer. Sticky/push footer tetap berlaku di
-   halaman detail, form, dan index (lihat aturan main di atas). */
+/* Halaman daftar/manage: `main` tidak dipaksa setinggi viewport agar tidak ada pita kosong. */
 @media (min-width: 721px) {
     body.projects-page main,
     body.experience-page main,
@@ -671,8 +667,10 @@ main {
     }
 
     body.manage-page .experience-section .portfolio-track {
-        padding: 0;
+        flex: 0 0 auto;
+        overflow: visible;
         scroll-snap-type: none;
+        padding: 16px 6px 32px;
         -webkit-mask-image: none;
         mask-image: none;
     }
@@ -771,7 +769,6 @@ main {
 
 .project-card-outline.is-active {
     transform: translateY(-6px);
-    /* angkat ringan, tanpa scale/glow */
 }
 
 /* HP: kartu Experience dominan terangkat sedikit */
@@ -781,28 +778,34 @@ main {
     }
 }
 
-/* ===== Halaman Experience HP: kunci tinggi (footer terlihat, hanya carousel yg scroll) ===== */
+/* HP: halaman daftar scroll normal supaya kartu tidak terpotong */
 @media (max-width: 720px) {
 
-    body.experience-page,
-    body.projects-page {
-        height: 100vh;
-        height: 100dvh;
-        overflow: hidden;
+    body.experience-page .experience-section,
+    body.projects-page .experience-section {
+        min-height: 0;
+        overflow: visible;
     }
 
-    body.experience-page main,
-    body.projects-page main {
-        flex: 1 1 auto;
-        min-height: 0;
-        overflow: hidden;
+    body.experience-page .experience-header,
+    body.projects-page .experience-header {
+        flex: 0 0 auto;
+        gap: 0.5rem;
+    }
+
+    body.experience-page .experience-section .portfolio-track,
+    body.projects-page .experience-section .portfolio-track {
+        flex: 0 0 auto;
+        overflow: visible;
+        scroll-snap-type: none;
+        padding: 24px 6px 48px;
+        -webkit-mask-image: none;
+        mask-image: none;
     }
 }
 
 
-/* Halaman form: display sebelumnya `flex-inline` (tidak valid) dan `gap`
-   pada wadah non-flex (tidak berefek) dihapus. Jarak antar field diatur
-   oleh .form-group { margin-bottom }. */
+/* Jarak antar field diatur oleh .form-group { margin-bottom }. */
 .project-form {
     width: 100%;
     max-width: 100%;
@@ -862,12 +865,9 @@ main {
 }
 
 /* Berlaku untuk tombol apa pun di grup, tanpa bergantung kelas .button */
-.button-group>*,
-.experience-status>*,
-.star-form>* {
+.button-group>* {
     flex: 1 1 0;
     min-width: 0;
-    height: auto;
 }
 
 .button,
@@ -963,23 +963,20 @@ main {
     font-size: 0.9rem;
     line-height: 1.5;
 }
-/* ===== HALAMAN PROJECTS & MANAGE ===== */
-/* Dipakai /projects/, /projects/manage/, dan /experience/manage/. */
+/* ===== HALAMAN PROJECTS & MANAGE (termasuk /experience/manage/) ===== */
 
-/* Halaman-halaman ini tidak mengunci tinggi seperti /experience/: biarkan
-   section tumbuh normal dan halaman di-scroll biasa. */
+/* Tidak mengunci tinggi seperti /experience/: section tumbuh normal, halaman di-scroll. */
 body.manage-page .experience-section {
     justify-content: flex-start;
     overflow: visible;
 }
 
 .experience-header {
+    padding-bottom: 1rem;
     width: 100%;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 1rem;
-    margin-bottom: 0.75rem;
 }
 
 .experience-header h1 {
@@ -1006,17 +1003,27 @@ body.manage-page .experience-section {
     font-size: 0.9rem;
 }
 
+/* Baris aksi (star + Ubah/Hapus): grid kolom sama rata supaya tombol berlabel
+   pendek tetap selebar tombol lain, dan semua setinggi barisnya. */
 .experience-status,
-.star-form{
-    display: flex;
+.star-form {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
     align-items: stretch;
-    justify-content: center;
     gap: 0.5rem;
+}
+
+/* `.button` memakai `height: fit-content` yang membatalkan align-items: stretch. */
+.button-group>*,
+.experience-status>*,
+.star-form>* {
+    height: auto;
 }
 
 .project-search {
     display: flex;
-    gap: 0.75rem;
+    gap: 0.5rem;
     margin-bottom: 1.5rem;
 }
 
@@ -1037,8 +1044,7 @@ body.manage-page .experience-section {
     border-color: var(--accent);
 }
 
-/* Baris aksi di bawah kartu: tombol hapus (komponen delete modal) dan tautan
-   luar "Lihat Project" di halaman publik /projects/. */
+/* Baris aksi di bawah kartu: star/hapus (delete modal) & "Lihat Project" publik. */
 .project-card-outline>.experience-status,
 .project-card-outline>.star-form {
     padding: 0.75rem 0.1rem 0.5rem;
@@ -1136,6 +1142,7 @@ body.manage-page .experience-section {
     .experience-header {
         flex-direction: column;
         align-items: flex-start;
+        padding-bottom: 8px;
     }
 
     .project-add-button {
@@ -1145,6 +1152,7 @@ body.manage-page .experience-section {
 
     .project-search {
         flex-direction: column;
+        margin-bottom: 0.5rem;
     }
 
     .project-search .button {

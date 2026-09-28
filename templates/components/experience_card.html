@@ -1,13 +1,7 @@
 {% comment %}
-Kartu carousel satu experience. Wajib: experience.
-
-Opsional: card_footer_template - nama template yang dirender SETELAH </a>,
-mis. modal hapus di halaman manage. Di halaman publik tidak diisi.
-Opsional: card_url - tujuan klik kartu; kalau kosong -> halaman detail publik.
-
-Guard `{% if %}` WAJIB: kalau nama template bernilai None, Django melempar
-TemplateDoesNotExist("No template names provided") - lihat
-IncludeNode.render() di django/template/loader_tags.py.
+Kartu carousel satu experience. Wajib: experience. Opsional: card_url dan
+card_footer_template (dirender setelah </a>, mis. modal hapus) — guard {% if %}
+wajib karena footer None bikin TemplateDoesNotExist.
 {% endcomment %}
 <div class="project-card-outline">
     <span class="glare-item-top"></span>

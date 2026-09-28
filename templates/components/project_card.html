@@ -1,18 +1,7 @@
 {% comment %}
-Kartu carousel satu project. Wajib: project.
-
-Opsional: card_footer_template - nama template yang dirender SETELAH </a>,
-di dalam `.project-card-outline` (halaman publik: tombol "Lihat Project";
-halaman manage: modal hapus; halaman index: tidak diisi).
-Opsional: card_url - tujuan klik kartu; kalau kosong -> halaman detail publik.
-
-Footer sengaja dirender di luar <a class="project-card-link"> supaya klik
-tombol lihat/hapus tidak ikut menavigasi ke halaman detail (anchor bersarang
-juga tidak valid HTML).
-
-Guard `{% if %}` WAJIB: kalau nama template bernilai None, Django melempar
-TemplateDoesNotExist("No template names provided") - lihat
-IncludeNode.render() di django/template/loader_tags.py.
+Kartu carousel satu project. Wajib: project. Opsional: card_url dan
+card_footer_template (dirender setelah </a>, mis. tombol lihat / modal hapus) —
+guard {% if %} wajib karena footer None bikin TemplateDoesNotExist.
 {% endcomment %}
 
 <div class="project-card-outline">

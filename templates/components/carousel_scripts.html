@@ -1,12 +1,6 @@
 {% comment %}
-Skrip fokus kartu carousel (`.portfolio-track`).
-
-Cara kerja: di desktop kartu berbaris sebagai grid dan efek "menyala" hanya
-muncul saat hover. Di layar kecil track berubah jadi carousel, jadi kartu yang
-paling dekat dengan titik tengah track ditandai `.is-active` supaya garis
-glare-nya tampil tanpa perlu hover.
-
-Pengguna tidak meng-include file ini langsung, tapi lewat di halaman masing-masing.
+Skrip kartu carousel (`.portfolio-track`): kartu terdekat titik tengah track
+ditandai `.is-active` supaya glare-nya tampil tanpa hover di layar kecil.
 {% endcomment %}
 
 <script>
@@ -34,7 +28,11 @@ Pengguna tidak meng-include file ini langsung, tapi lewat di halaman masing-masi
             if (!kartu.length) return;
 
             var trackRect = track.getBoundingClientRect();
-            var centerY = trackRect.top + trackRect.height / 2;
+            // Titik tengah area track yang terlihat di layar: benar untuk track yang
+            // scroll sendiri (halaman manage) maupun halaman yang scroll normal.
+            var atas = Math.max(trackRect.top, 0);
+            var bawah = Math.min(trackRect.bottom, window.innerHeight);
+            var centerY = atas + (bawah - atas) / 2;
             var terdekat = kartu[0];
             var jarakTerdekat = Infinity;
 
@@ -66,6 +64,8 @@ Pengguna tidak meng-include file ini langsung, tapi lewat di halaman masing-masi
             }
 
             track.addEventListener('scroll', onScroll, { passive: true });
+            // Halaman yang scroll normal (HP): kartu aktif ikut berpindah saat digulir.
+            window.addEventListener('scroll', onScroll, { passive: true });
             window.addEventListener('resize', function () { apply(track); });
             window.addEventListener('load', function () { apply(track); });
             apply(track);
