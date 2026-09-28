@@ -15,6 +15,7 @@ from main.views import (
     show_main,
     show_project_detail,
     show_projects,
+    toggle_experience_star,
     toggle_star,
     update_experience,
     update_project,
@@ -27,7 +28,7 @@ app_name = "main"
 urlpatterns = [
     path("", show_main, name="show_main"),
 
-    # === Halaman publik (read-only): hanya menampilkan, kartu bisa diklik ke blog ===
+    # === Halaman publik (read-only) ===
     path("experience/", show_experience, name="show_experience"),
     path("projects/", show_projects, name="show_projects"),
 
@@ -40,6 +41,10 @@ urlpatterns = [
     path("projects/manage/add/", create_project, name="create_project"),
     path("projects/manage/<int:project_id>/delete/", delete_project, name="delete_project"),
     path("projects/manage/<int:project_id>/update/", update_project, name="update_project"),
+
+    # Wajib di atas `experience/<path:title>/`: konverter `<path:...>` menelan
+    # "/" sehingga rute detail bisa menyerobot URL star ini.
+    path("experience/<uuid:experience_id>/star/", toggle_experience_star, name="toggle_experience_star"),
 
     # === Halaman blog (detail) ===
     path("experience/<path:title>/", show_experience_detail, name="show_experience_detail"),
