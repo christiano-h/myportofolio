@@ -1,12 +1,8 @@
 {% extends "base.html" %}
 
 {% comment %}
-Halaman PUBLIK /projects/ (read-only).
-
-Hanya menampilkan daftar project; tidak ada tombol tambah/hapus. Kartunya
-memakai komponen `components/project_card.html` yang sama dengan halaman
-manage, dan marka carousel yang sama dengan /experience/ supaya tampilan
-kedua halaman konsisten. Tambah/hapus ada di /projects/manage/.
+Halaman PUBLIK /projects/ (read-only). Kartu memakai components/project_card.html;
+tambah/hapus ada di /projects/manage/.
 {% endcomment %}
 
 {% block meta %}
@@ -19,7 +15,15 @@ kedua halaman konsisten. Tambah/hapus ada di /projects/manage/.
     <main>
         <section class="experience-section" id="projects">
             <div class="container">
-                <h1>Projects</h1>
+                <div class="experience-header">
+                    <h1>Projects</h1>
+                    {% if perms.main.add_project or perms.main.change_project or perms.main.delete_project %}
+                        <a href="{% url 'main:manage_projects' %}" class="button project-add-button">
+                            Manage Projects
+                        </a>
+                    {% endif %}
+                </div>
+
                 {% include "components/list_search.html" with placeholder="Cari berdasarkan nama proyek" %}
                 <div class="portfolio-track" aria-label="Projects">
                     {% for project in project_list %}

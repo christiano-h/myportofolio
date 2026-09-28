@@ -1,33 +1,19 @@
 {% comment %}
-Komponen modal konfirmasi hapus (Popover API).
-
-Dipakai bersama oleh project & experience supaya markup dan styling-nya tidak
-terduplikasi. Pemakai tidak meng-include file ini langsung, tapi lewat
-`components/project_delete_modal.html` atau
-`components/experience_delete_modal.html`.
-
-Variabel yang wajib diisi:
-  modal_prefix  - awalan id unik, mis. "delete-project"
-  object_id     - primary key objek, dipakai untuk membedakan tiap modal
-  delete_url    - URL tujuan POST penghapusan
-  object_title  - judul objek yang ditampilkan di kalimat konfirmasi
-  trigger_label - teks tombol pembuka, mis. "Hapus Proyek"
-  heading       - judul dialog, mis. "Hapus Proyek?"
-  aria_label    - label aksesibilitas tombol pembuka
-
-Catatan: modal ini butuh Popover API (Chrome 114+, Safari 17+, Firefox 125+).
-Di browser lama, tombol tidak akan membuka apa pun.
+Modal konfirmasi hapus (Popover API; di browser lama tombolnya tidak membuka apa pun).
+Wajib: modal_prefix, object_id, delete_url, object_title, trigger_label, heading, aria_label.
+Opsional: star_template, action_url, can_edit, can_delete.
 {% endcomment %}
 
 <div class="experience-status">
     {% if star_template %}
         {% include star_template %}
     {% endif %}
-    {% if action_url %}
+    {% if action_url and can_edit %}
     <a href="{{ action_url }}"
        class="button button-secondary"
        title="{{ action_label }}">{{ action_label }}</a>
     {% endif %}
+    {% if can_delete %}
     <button type="button"
             class="button button-danger"
             popovertarget="{{ modal_prefix }}-{{ object_id }}"
@@ -35,8 +21,10 @@ Di browser lama, tombol tidak akan membuka apa pun.
             title="{{ aria_label }}">
         {{ trigger_label }}
     </button>
+    {% endif %}
 </div>
 
+{% if can_delete %}
 <div id="{{ modal_prefix }}-{{ object_id }}"
      class="delete-modal"
      popover="auto"
@@ -71,3 +59,4 @@ Di browser lama, tombol tidak akan membuka apa pun.
         </form>
     </div>
 </div>
+{% endif %}
