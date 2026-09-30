@@ -6,41 +6,270 @@ tambah/hapus ada di /projects/manage/.
 {% endcomment %}
 
 {% block meta %}
-    <title>Projects - {{ name }}</title>
+<title>Projects - {{ name }}</title>
 {% endblock meta %}
 
 {% block body_class %}projects-page{% endblock body_class %}
 
 {% block content %}
-    <main>
-        <section class="experience-section" id="projects">
-            <div class="container">
-                <div class="experience-header">
-                    <h1>Projects</h1>
-                    {% if perms.main.add_project or perms.main.change_project or perms.main.delete_project %}
-                        <a href="{% url 'main:manage_projects' %}" class="button project-add-button">
-                            Manage Projects
-                        </a>
-                    {% endif %}
-                </div>
-
-                {% include "components/list_search.html" with placeholder="Cari berdasarkan nama proyek" %}
-                <div class="portfolio-track" aria-label="Projects">
-                    {% for project in project_list %}
-                        {% include "components/project_card.html" with project=project card_footer_template="components/project_star.html" %}
-                    {% empty %}
-                        {% if title_query %}
-                        <p class="empty-state">Tidak ada proyek dengan nama tersebut.</p>
-                        {% else %}
-                        <p class="empty-state">Belum ada proyek yang ditambahkan.</p>
-                        {% endif %}
-                    {% endfor %}
-                </div>
+<main>
+    <section class="experience-section" id="projects">
+        <div class="container">
+            <div class="experience-header">
+                <h1>Projects</h1>
+                {% if perms.main.change_project %}
+                <a href="{% url 'main:manage_projects' %}" class="button project-add-button">
+                    Manage Projects
+                </a>
+                {% endif %}
+                {% if perms.main.add_project %}
+                <button type="button" class="button project-add-button" popovertarget="add-project-modal">
+                    <span aria-hidden="true">+</span>
+                    Tambah Proyek
+                </button>
+                {% endif %}
             </div>
-        </section>
-    </main>
+
+            <form id="project-search-form" class="project-search">
+                <input type="search" id="search-input" name="title" value="{{ title_query }}"
+                    placeholder="Cari berdasarkan nama proyek" class="project-search__input"
+                    aria-label="Cari berdasarkan nama proyek">
+                <button type="submit" class="button">Cari</button>
+            </form>
+
+            <!-- Loading State -->
+            <div id="loading" class="empty-state hide">
+                <p>Memuat projects...</p>
+            </div>
+
+            <!-- Error State -->
+            <div id="error" class="empty-state hide">
+                <p>Gagal memuat data projects. Silakan coba lagi.</p>
+            </div>
+
+            <!-- Empty State: teks awal dirender server supaya sama dengan tampilan lama;
+                 JS hanya menukar teksnya saat pencarian tanpa reload. -->
+            <div id="empty" class="empty-state hide">
+                {% if title_query %}
+                <p>Tidak ada proyek dengan nama tersebut.</p>
+                {% else %}
+                <p>Belum ada proyek yang ditambahkan.</p>
+                {% endif %}
+            </div>
+
+            <!-- Project Grid: memakai aturan `.portfolio-track` yang sudah ada -->
+            <div id="grid" class="portfolio-track hide" aria-label="Projects"></div>
+        </div>
+    </section>
+</main>
+
+{% if perms.main.add_project %}
+{% include "components/project_form_modal.html" %}
+{% endif %}
+
+
+<script>
+    // Konfigurasi
+    // Sentinela ID harus ANGKA (rute star memakai <int:project_id>); sentinela judul
+    // berupa teks karena rute detail memakai <path:title>.
+    const BASE_PROJECTS_ENDPOINT = "{% url 'main:get_projects_json' %}";
+    const PROJECT_ID_SENTINEL = '999999999';
+    const PROJECT_TITLE_SENTINEL = 'PROJECT_TITLE_SENTINEL';
+    const TOGGLE_STAR_URL = "{% url 'main:toggle_star' 999999999 %}";
+    const PROJECT_DETAIL_URL = "{% url 'main:show_project_detail' 'PROJECT_TITLE_SENTINEL' %}";
+    const LOGIN_URL = "{% url 'main:login' %}";
+    const NEXT_PATH = "{{ request.path }}";
+    const IS_AUTHENTICATED = "{{ user.is_authenticated|yesno:'true,false' }}" === "true";
+    const EMPTY_MESSAGES = {
+        tanpa_data: "Belum ada proyek yang ditambahkan.",
+        tanpa_hasil: "Tidak ada proyek dengan nama tersebut.",
+    };
+    let projectsAbortController;
+
+    // Elemen DOM
+    const loadingState = document.getElementById('loading');
+    const errorState = document.getElementById('error');
+    const emptyState = document.getElementById('empty');
+    const gridContainer = document.getElementById('grid');
+    const searchForm = document.getElementById('project-search-form');
+    const searchInput = document.getElementById('search-input');
+    const SEARCH_DEBOUNCE_DELAY = 300;
+    let searchDebounceTimer;
+
+    // Menyembunyikan/Menampilkan section halaman
+    function displayPageSection({ showLoading = false, showError = false, showEmpty = false, showGrid = false }) {
+        loadingState.classList.toggle('hide', !showLoading);
+        errorState.classList.toggle('hide', !showError);
+        emptyState.classList.toggle('hide', !showEmpty);
+        gridContainer.classList.toggle('hide', !showGrid);
+    }
+
+    // Baris aksi star: meniru components/project_star.html — pengunjung anonim melihat
+    // tautan login, pengguna login melihat form POST ke endpoint `toggle_star`.
+    function buildStarFooter(project, projectId) {
+        const starCountHtml = `<span class="star-count">${escapeHtml(project.star_count)}</span>`;
+
+        if (!IS_AUTHENTICATED) {
+            return `
+                <div class="star-form">
+                    <a href="${LOGIN_URL}?next=${NEXT_PATH}"
+                       class="button button-star"
+                       title="Login dulu untuk memberi star">
+                        <span aria-hidden="true">★</span>
+                        Login untuk memberi star
+                        ${starCountHtml}
+                    </a>
+                </div>`;
+        }
+
+        const starUrl = TOGGLE_STAR_URL.replace(PROJECT_ID_SENTINEL, escapeHtml(projectId));
+        const isStarredClass = project.is_starred ? ' is-starred' : '';
+        const starText = project.is_starred ? 'Unstar' : 'Star';
+        const starTitle = project.star_count > 0
+            ? `Dibintangi oleh ${escapeHtml(project.starred_by_names)}`
+            : 'Jadilah yang pertama memberi star';
+
+        return `
+            <form method="post" action="${escapeHtml(starUrl)}" class="star-form">
+                {% csrf_token %}
+                <input type="hidden" name="next" value="${NEXT_PATH}">
+                <button type="submit"
+                        class="button button-star${isStarredClass}"
+                        title="${starTitle}">
+                    <span aria-hidden="true">★</span>
+                    ${starText}
+                    ${starCountHtml}
+                </button>
+            </form>`;
+    }
+
+    // Meniru `quote(value, safe='/')` yang dipakai Django saat `reverse()` membentuk
+    // path detail, supaya URL di kartu sama persis dengan versi server-rendered.
+    function encodeTitleForPath(title) {
+        return encodeURIComponent(title).replace(/%2F/g, '/');
+    }
+
+    // Meniru autoescape Django (django.utils.html.escape) untuk nilai dari API,
+    // supaya HTML yang dibentuk identik dengan template & aman dari XSS.
+    function escapeHtml(value) {
+        return String(value ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#x27;');
+    }
+
+    // Membuat elemen card project. Struktur DOM-nya sengaja sama dengan
+    // components/project_card.html supaya outline, glare, hover, dan carousel HP
+    // (`.project-card-outline`, `.portfolio-*`) berperilaku seperti versi server.
+    function buildProjectCardElement(item) {
+        const project = item.fields;
+        const projectId = item.pk;
+        const detailUrl = PROJECT_DETAIL_URL.replace(
+            PROJECT_TITLE_SENTINEL,
+            encodeTitleForPath(project.title)
+        );
+
+        const imageHtml = project.project_image_url
+            ? `<img class="portfolio-img" src="${escapeHtml(project.project_image_url)}" alt="${escapeHtml(project.title)}">`
+            : '';
+        const kickerHtml = project.tech_stack
+            ? `<p class="portfolio-kicker">${escapeHtml(project.tech_stack)}</p>`
+            : '';
+        const descriptionHtml = project.description
+            ? `<p class="portfolio-desc">${escapeHtml(project.description)}</p>`
+            : '';
+
+        const cardOutline = document.createElement('div');
+        cardOutline.className = 'project-card-outline';
+        cardOutline.innerHTML = `
+            <span class="glare-item-top"></span>
+            <a href="${detailUrl}" class="project-card-link">
+                <article class="portfolio-card project-card">
+                    <span class="glare-item-top"></span>
+                    ${imageHtml}
+                    <h3 class="portfolio-title">${escapeHtml(project.title)}</h3>
+                    ${kickerHtml}
+                    ${descriptionHtml}
+                </article>
+            </a>
+            ${buildStarFooter(project, projectId)}
+        `;
+
+        return cardOutline;
+    }
+
+    // Pesan kosong dibedakan seperti versi server-rendered: ?title= terisi vs tidak.
+    function setEmptyMessage(message) {
+        const emptyParagraph = emptyState.querySelector('p');
+        if (emptyParagraph) emptyParagraph.textContent = message;
+    }
+
+    // Modal hanya dirender untuk pengguna yang punya `add_project`, jadi dijaga null.
+    function closeProjectModal() {
+        const modal = document.getElementById("add-project-modal");
+        if (modal) modal.hidePopover();
+    }
+
+    // Fetch data project
+    async function fetchProjects(searchQuery = "") {
+        if (projectsAbortController) projectsAbortController.abort();
+        projectsAbortController = new AbortController();
+
+        try {
+            displayPageSection({ showLoading: true });
+
+            const url = searchQuery ? `${BASE_PROJECTS_ENDPOINT}?title=${encodeURIComponent(searchQuery)}` : BASE_PROJECTS_ENDPOINT;
+
+            const response = await fetch(url, {
+                headers: { 'Accept': 'application/json' },
+                signal: projectsAbortController.signal,
+            });
+
+            if (!response.ok) throw new Error('Failed to fetch data');
+
+            const projectData = await response.json();
+
+            if (projectData.length === 0) {
+                setEmptyMessage(searchQuery ? EMPTY_MESSAGES.tanpa_hasil : EMPTY_MESSAGES.tanpa_data);
+                displayPageSection({ showEmpty: true });
+            } else {
+                gridContainer.replaceChildren(...projectData.map(buildProjectCardElement));
+                displayPageSection({ showGrid: true });
+            }
+        } catch (error) {
+            if (error.name === 'AbortError') return;
+            console.error('Error loading projects:', error);
+            displayPageSection({ showError: true });
+        }
+    }
+
+    // Event Handlers untuk Form Search
+    function searchProjects() {
+        fetchProjects(searchInput.value.trim());
+    }
+
+    searchInput.addEventListener("input", function () {
+        clearTimeout(searchDebounceTimer);
+
+        searchDebounceTimer = setTimeout(function () {
+            searchProjects();
+        }, SEARCH_DEBOUNCE_DELAY);
+    });
+
+    searchForm.addEventListener("submit", function (event) {
+        event.preventDefault();
+        clearTimeout(searchDebounceTimer);
+        searchProjects();
+    });
+
+    // Start application
+    fetchProjects(searchInput.value.trim());
+</script>
+
 {% endblock content %}
 
 {% block scripts %}
-    {% include "components/carousel_scripts.html" %}
+{% include "components/carousel_scripts.html" %}
 {% endblock scripts %}

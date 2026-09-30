@@ -1,6 +1,6 @@
 from django.contrib import messages
 from django.core import serializers
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 
 from django.contrib.auth import login, logout
@@ -14,6 +14,7 @@ from main.forms import ExperienceForm, ProjectForm
 from main.models import Experience, Project
 
 import datetime
+import json
 
 
 # Urutan decorator penting: `login_required` di luar `permission_required`
@@ -81,36 +82,69 @@ def show_experience_detail(request, title):
     return render(request, "experience_detail.html", context)
 
 def get_projects_json(request):
-    """Endpoint JSON daftar project; mendukung filter `?title=`."""
     title_query = request.GET.get("title", "").strip()
-    projects = Project.objects.all()
+    projects = Project.objects.prefetch_related('starred_by').all()
 
     if title_query:
         projects = projects.filter(title__icontains=title_query)
 
-    projects_json = serializers.serialize("json", projects, use_natural_foreign_keys=True)
-    return HttpResponse(projects_json, content_type="application/json")
+    # Konstruksi data JSON secara manual agar bisa menyisipkan logika Star
+    data = []
+    for project in projects:
+        starred_users = project.starred_by.all()
+        is_starred = request.user in starred_users if request.user.is_authenticated else False
+        starred_by_names = ", ".join([u.username for u in starred_users])
+
+        data.append({
+            "pk": str(project.pk),
+            "fields": {
+                "title": project.title,
+                "description": project.description,
+                "tech_stack": project.tech_stack,
+                "project_url": project.project_url,
+                "project_image_url": project.project_image_url,
+                "star_count": starred_users.count(),
+                "is_starred": is_starred,
+                "starred_by_names": starred_by_names,
+            }
+        })
+
+    return JsonResponse(data, safe=False)
 
 
 def _projects_from_json(request):
-    """Ambil daftar Project lewat jalur JSON: `get_projects_json` -> deserialize.
+    """Ambil daftar Project lewat jalur JSON: `get_projects_json` -> objek `Project`.
 
     Sengaja lewat JSON (meniru arsitektur client-server & memaksa endpoint API
-    teruji); filter `?title=` dibaca endpoint-nya. Dipakai bersama oleh
-    `show_projects` dan `manage_projects`.
+    teruji); filter `?title=` dibaca endpoint-nya. Dipakai `manage_projects`.
+
+    Muatan JSON-nya kini berisi field turunan (`project_image_url`, `star_count`,
+    `is_starred`, `starred_by_names`) yang bukan field model, jadi `serializers.
+    deserialize` tidak bisa dipakai lagi dan objeknya dibangun manual di sini.
+    M2M `starred_by` sengaja tidak diisi: komponen kartu (`project_star.html`)
+    membacanya lewat pk yang sudah terpasang di objek ini.
     """
     json_response = get_projects_json(request)
+    payload = json.loads(json_response.content.decode("utf-8"))
 
-    # `deserialize` mengembalikan generator -> wajib dihabiskan jadi list.
-    deserialized = serializers.deserialize("json", json_response.content.decode("utf-8"))
-    return [obj.object for obj in deserialized]
+    return [
+        Project(
+            pk=int(item["pk"]),
+            title=item["fields"]["title"],
+            description=item["fields"]["description"],
+            tech_stack=item["fields"]["tech_stack"],
+            project_url=item["fields"]["project_url"],
+            thumbnail=item["fields"]["project_image_url"],
+        )
+        for item in payload
+    ]
 
 
 def show_projects(request):
     context = {
         "name": "ANO",
-        "project_list": _projects_from_json(request),
         "title_query": request.GET.get("title", "").strip(),
+        "form": ProjectForm(),
     }
     return render(request, "project.html", context)
 

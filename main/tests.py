@@ -10,7 +10,7 @@ Cakupan:
 5. JSON API  -> /api/projects/ & /api/experiences/ beserta filter ?title=
 6. Template  -> link kartu ke halaman detail, guard kondisional, teks fallback
 7. Fixture   -> initial_data.json bisa dimuat dan semua datanya bisa dibuka
-8. Projects  -> /projects/ (publik, read-only) + hasil deserialize JSON & ?title=
+8. Projects  -> /projects/ (publik, read-only) dirender JS dari endpoint JSON
                 /projects/manage/ (tambah & hapus) & /projects/manage/add/
 9. Experience-> /experience/ (publik, read-only)
                 /experience/manage/ (tambah & hapus) & /experience/manage/add/
@@ -38,6 +38,12 @@ from main.models import Experience, Project
 
 # UUID tetap untuk menguji rute /experience/<uuid:...>/delete/.
 UUID_TEST = "3f1a4c6e-0000-4000-8000-000000000000"
+
+# Sentinela di templates/project.html: kartu dibangun JS, jadi URL per-project
+# dibuat dari template URL ber-sentinel ini lalu sentinelanya diganti pk/judul asli
+# yang datang dari endpoint JSON. Nilainya harus sama dengan template tersebut.
+PROJECT_ID_SENTINEL = 999999999
+PROJECT_TITLE_SENTINEL = "PROJECT_TITLE_SENTINEL"
 
 # Permission pembentuk peran "Editor": boleh MENGUBAH, tidak boleh menambah
 # (`add_*`) atau menghapus (`delete_*`).
@@ -518,17 +524,19 @@ class ShowProjectsViewTests(ProjectDataMixin, TestCase):
         self.assertTemplateUsed(r, "project.html")
 
     def test_menampilkan_semua_project_tanpa_filter(self):
+        """Kartu dirender JS, jadi daftarnya datang dari endpoint JSON."""
         r = self.client.get(reverse("main:show_projects"))
-        self.assertEqual(len(r.context["project_list"]), 2)
         self.assertEqual(r.context["title_query"], "")
-        self.assertContains(r, "SINTAKS")
-        self.assertContains(r, "SCUBAAAAA")
+        data = self.client.get(reverse("main:get_projects_json")).json()
+        self.assertEqual(
+            [d["fields"]["title"] for d in data], ["SINTAKS", "SCUBAAAAA"]
+        )
 
     def test_search_title_memfilter_abaikan_besar_kecil_huruf(self):
         r = self.client.get(reverse("main:show_projects"), {"title": "sint"})
-        self.assertEqual([p.title for p in r.context["project_list"]], ["SINTAKS"])
         self.assertEqual(r.context["title_query"], "sint")
-        self.assertNotContains(r, "SCUBAAAAA")
+        data = self.client.get(reverse("main:get_projects_json"), {"title": "sint"}).json()
+        self.assertEqual([d["fields"]["title"] for d in data], ["SINTAKS"])
 
     def test_search_tanpa_hasil_menampilkan_pesan_khusus(self):
         r = self.client.get(reverse("main:show_projects"), {"title": "zzz"})
@@ -540,9 +548,16 @@ class ShowProjectsViewTests(ProjectDataMixin, TestCase):
         self.assertContains(r, "Belum ada proyek yang ditambahkan.")
 
     def test_kartu_menampilkan_thumbnail_dan_tech_stack(self):
+        """Data kartu datang dari endpoint JSON, lalu dirender kartu JS."""
+        data = self.client.get(reverse("main:get_projects_json")).json()
+        sintaks = next(d for d in data if d["fields"]["title"] == "SINTAKS")
+        self.assertEqual(
+            sintaks["fields"]["project_image_url"], "/static/css/img/daftar_sintaks.jpg"
+        )
+        self.assertEqual(sintaks["fields"]["tech_stack"], "Django, PostgreSQL")
         r = self.client.get(reverse("main:show_projects"))
-        self.assertContains(r, "/static/css/img/daftar_sintaks.jpg")
-        self.assertContains(r, "Django, PostgreSQL")
+        self.assertContains(r, "portfolio-img")
+        self.assertContains(r, "portfolio-kicker")
 
     def test_kartu_daftar_tidak_menautkan_langsung_ke_url_eksternal(self):
         """Tautan luar hanya di halaman detail, supaya alurnya dua langkah."""
@@ -576,20 +591,33 @@ class ShowProjectsViewTests(ProjectDataMixin, TestCase):
         self.assertNotContains(r, reverse("main:delete_project", args=[self.sintaks.pk]))
 
 
-    def test_hasil_deserialize_json_berisi_objek_project(self):
-        """`show_projects` mengirim objek Project hasil deserialize, bukan QuerySet."""
-        r = self.client.get(reverse("main:show_projects"))
-        daftar = r.context["project_list"]
-        self.assertIsInstance(daftar, list)
-        self.assertEqual(len(daftar), 2)
-        for p in daftar:
-            self.assertIsInstance(p, Project)
-            # Instance baru hasil deserialize, bukan hasil query DB.
-            self.assertTrue(p._state.adding)
+    def test_halaman_publik_menyiapkan_wadah_dan_endpoint_ajax(self):
+        """Halaman publik kini kerangka AJAX: wadah #grid + endpoint JSON.
 
-    def test_deserialize_tetap_hormati_filter_title(self):
-        r = self.client.get(reverse("main:show_projects"), {"title": "sint"})
-        self.assertEqual([p.title for p in r.context["project_list"]], ["SINTAKS"])
+        Data tidak lagi dikirim lewat context (`project_list`), melainkan di-fetch
+        `project.html` dari `/api/projects/`.
+        """
+        r = self.client.get(reverse("main:show_projects"))
+        self.assertNotIn("project_list", r.context)
+        self.assertContains(r, reverse("main:get_projects_json"))
+        self.assertContains(r, 'id="grid"')
+
+    def test_kartu_builder_pakai_markup_komponen_project_card(self):
+        """Kartu JS wajib memakai class yang sama dengan components/project_card.html,
+        supaya outline, glare, hover, dan carousel HP (`.project-card-outline`) tetap
+        berperilaku seperti versi server-rendered."""
+        r = self.client.get(reverse("main:show_projects"))
+        for kelas in [
+            "project-card-outline",
+            "project-card-link",
+            "portfolio-card project-card",
+            "portfolio-img",
+            "portfolio-title",
+            "portfolio-kicker",
+            "portfolio-desc",
+        ]:
+            with self.subTest(kelas=kelas):
+                self.assertContains(r, kelas)
 
 
 class ManageProjectsViewTests(ProjectDataMixin, AuthenticatedTestCase):
@@ -622,7 +650,7 @@ class ManageProjectsViewTests(ProjectDataMixin, AuthenticatedTestCase):
         self.assertEqual(r.context["title_query"], "sint")
 
     def test_pakai_jalur_deserialize_json_yang_sama(self):
-        """Manage memakai helper `_projects_from_json` yang sama dengan publik."""
+        """Manage memakai helper `_projects_from_json` (jalur endpoint JSON)."""
         r = self.client.get(reverse("main:manage_projects"))
         daftar = r.context["project_list"]
         self.assertIsInstance(daftar, list)
@@ -700,8 +728,9 @@ class JsonApiViewTests(TestCase):
 class JsonApiNoLeakTests(TestCase):
     """JSON API tidak membocorkan identitas user (poin 14 docstring modul).
 
-    M2M `starred_by` diserialisasi dengan natural key, jadi yang terkirim adalah
-    username - bukan primary key user.
+    `/api/experiences/` masih memakai serializer Django (M2M `starred_by` dikirim
+    sebagai natural key / username), sedangkan `/api/projects/` memakai payload
+    custom: username-nya ada di `starred_by_names`, bukan pk user.
     """
 
     def setUp(self):
@@ -722,10 +751,13 @@ class JsonApiNoLeakTests(TestCase):
         return r
 
     def test_starred_by_berisi_username_bukan_pk_user(self):
-        for nama in ["get_projects_json", "get_experiences_json"]:
-            with self.subTest(endpoint=nama):
-                data = self._get_json(nama).json()
-                self.assertEqual(data[0]["fields"]["starred_by"], [["penggemar"]])
+        data_exp = self._get_json("get_experiences_json").json()
+        self.assertEqual(data_exp[0]["fields"]["starred_by"], [["penggemar"]])
+
+        data_proj = self._get_json("get_projects_json").json()
+        self.assertEqual(data_proj[0]["fields"]["starred_by_names"], "penggemar")
+        # Payload project tidak mengirim M2M mentah (yang bisa membawa pk user).
+        self.assertNotIn("starred_by\":", self._get_json("get_projects_json").content.decode())
 
     def test_payload_tidak_memuat_kolom_pribadi_user(self):
         for nama in ["get_projects_json", "get_experiences_json"]:
@@ -737,7 +769,7 @@ class JsonApiNoLeakTests(TestCase):
     def test_starred_by_kosong_tetap_list_kosong(self):
         self.project.starred_by.clear()
         data = self._get_json("get_projects_json").json()
-        self.assertEqual(data[0]["fields"]["starred_by"], [])
+        self.assertEqual(data[0]["fields"]["starred_by_names"], "")
 
 
 class CreateExperienceViewTests(AuthenticatedTestCase):
@@ -891,15 +923,20 @@ class UpdateProjectViewTests(AuthenticatedTestCase):
         self.assertContains(r, reverse("main:update_project", args=[self.project.pk]))
 
     def test_kartu_publik_tetap_menuju_detail(self):
+        """Kartu JS menaut ke halaman detail lewat template URL ber-sentinel judul."""
         r = self.client.get(reverse("main:show_projects"))
-        self.assertContains(r, reverse("main:show_project_detail", args=[self.project.title]))
+        self.assertContains(
+            r, reverse("main:show_project_detail", args=[PROJECT_TITLE_SENTINEL])
+        )
+        self.assertContains(r, "project-card-link")
         self.assertNotContains(r, reverse("main:update_project", args=[self.project.pk]))
 
     def test_data_baru_tampil_di_daftar_dan_detail(self):
         self.client.post(
             reverse("main:update_project", args=[self.project.pk]),
             {"title": "TERBARU", "description": "deskripsi anyar"})
-        self.assertContains(self.client.get(reverse("main:show_projects")), "TERBARU")
+        data = self.client.get(reverse("main:get_projects_json")).json()
+        self.assertEqual([d["fields"]["title"] for d in data], ["TERBARU"])
         self.assertContains(
             self.client.get(reverse("main:show_project_detail", args=["TERBARU"])),
             "deskripsi anyar")
@@ -1102,6 +1139,24 @@ class EditorAccessTests(TestCase):
         self.assertContains(r, reverse("main:delete_project", args=[self.project.pk]))
         self.assertContains(r, reverse("main:update_project", args=[self.project.pk]))
 
+    def test_editor_tidak_melihat_tombol_tambah_di_halaman_publik(self):
+        """Tombol+modal Tambah hanya untuk `add_project`; Editor tidak punya izin itu.
+
+        Sebelumnya kondisinya digabung dengan `change_project`, jadi Editor melihat
+        tombol yang `popovertarget`-nya menunjuk modal yang tidak dirender (tombol mati).
+        """
+        r = self.client.get(reverse("main:show_projects"))
+        self.assertContains(r, reverse("main:manage_projects"))
+        self.assertNotContains(r, "Tambah Proyek")
+        self.assertNotContains(r, 'id="add-project-modal"')
+
+    def test_owner_melihat_tombol_dan_modal_tambah_di_halaman_publik(self):
+        owner = User.objects.create_superuser("owner2", "owner2@example.com", "rahasia-owner")
+        self.client.force_login(owner)
+        r = self.client.get(reverse("main:show_projects"))
+        self.assertContains(r, "Tambah Proyek")
+        self.assertContains(r, 'id="add-project-modal"')
+
 
 class ToggleStarViewTests(TestCase):
     """toggle_star: satu star per pengguna, wajib login, `next` divalidasi."""
@@ -1161,7 +1216,8 @@ class ToggleStarViewTests(TestCase):
     def test_pengguna_login_melihat_form_star_bercsrf(self):
         self.client.force_login(self.user)
         r = self.client.get(reverse("main:show_projects"))
-        self.assertContains(r, self.url)
+        # URL star kartu dibangun dari sentinel id; id aslinya datang dari JSON.
+        self.assertContains(r, reverse("main:toggle_star", args=[PROJECT_ID_SENTINEL]))
         self.assertContains(r, "csrfmiddlewaretoken")
         self.assertContains(r, "button-star")
 
