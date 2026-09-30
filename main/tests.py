@@ -1287,3 +1287,36 @@ class ToggleStarExperienceViewTests(TestCase):
         self.assertContains(r, self.url)
         self.assertContains(r, "csrfmiddlewaretoken")
 
+class ProjectXssGuardTests(AuthenticatedTestCase):
+    """ProjectForm membuang tag HTML, dan halaman publik tidak pernah memuatnya mentah."""
+
+    payload = '<img src="x" onerror="alert(\'XSS!\')">'
+
+    def setUp(self):
+        super().setUp()
+        Project.objects.all().delete()
+
+    def test_form_menolak_judul_yang_hanya_tag_html(self):
+        r = self.client.post(reverse("main:create_project"), {"title": self.payload})
+        self.assertTrue(r.context["form"].errors)
+        self.assertIn("tidak boleh hanya berisi tag HTML", r.content.decode())
+        self.assertEqual(Project.objects.count(), 0)
+
+    def test_form_membersihkan_tag_pada_judul_tech_stack_dan_deskripsi(self):
+        self.client.post(reverse("main:create_project"), {
+            "title": "Halo <b>dunia</b>",
+            "tech_stack": "Django <script>x</script>",
+            "description": "<i>Ringkas</i>",
+        })
+        p = Project.objects.get()
+        self.assertEqual(p.title, "Halo dunia")
+        self.assertEqual(p.tech_stack, "Django x")
+        self.assertEqual(p.description, "Ringkas")
+
+    def test_halaman_publik_tidak_memuat_tag_mentah(self):
+        """Data disuntik langsung ke DB (melewati form) untuk menguji jalur render."""
+        Project.objects.create(title=self.payload)
+        r = self.client.get(reverse("main:show_projects"))
+        self.assertNotContains(r, self.payload)
+        # kartu dibangun JS, jadi yang boleh ada adalah pemanggilan escapeHtml
+        self.assertContains(r, "escapeHtml(")
