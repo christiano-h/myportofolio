@@ -41,3 +41,16 @@ function showToast(title, message, type = 'normal', duration = 3000) {
       toastTimer = setTimeout(() => toastComponent.hidePopover(), 300);
   }, duration);
 }
+
+// Tampilkan pesan django.contrib.messages sebagai toast.
+// Daftar pesan disisipkan oleh components/toast.html sebagai window.__djangoMessages.
+// Dijalankan setelah DOM siap agar tahan terhadap urutan pemuatan skrip.
+document.addEventListener('DOMContentLoaded', function () {
+  if (!Array.isArray(window.__djangoMessages)) return;
+  window.__djangoMessages.forEach(function (m) {
+    var type = m.tags.includes('success') ? 'success'
+             : m.tags.includes('error') ? 'error' : 'normal';
+    var title = type === 'success' ? 'Berhasil' : type === 'error' ? 'Gagal' : 'Info';
+    showToast(title, m.text, type);
+  });
+});
