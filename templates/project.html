@@ -17,17 +17,19 @@ tambah/hapus ada di /projects/manage/.
         <div class="container">
             <div class="experience-header">
                 <h1>Projects</h1>
-                {% if perms.main.change_project %}
-                <a href="{% url 'main:manage_projects' %}" class="button project-add-button">
-                    Manage Projects
-                </a>
-                {% endif %}
-                {% if perms.main.add_project %}
-                <button type="button" class="button project-add-button" popovertarget="add-project-modal">
-                    <span aria-hidden="true">+</span>
-                    Tambah Proyek
-                </button>
-                {% endif %}
+                <div class="experience-header__actions">
+                    {% if perms.main.change_project %}
+                    <a href="{% url 'main:manage_projects' %}" class="button project-add-button">
+                        Manage Projects
+                    </a>
+                    {% endif %}
+                    {% if perms.main.add_project %}
+                    <button type="button" class="button project-add-button" popovertarget="add-project-modal">
+                        <span aria-hidden="true">+</span>
+                        Tambah Proyek
+                    </button>
+                    {% endif %}
+                </div>
             </div>
 
             <form id="project-search-form" class="project-search">
@@ -263,6 +265,31 @@ tambah/hapus ada di /projects/manage/.
         clearTimeout(searchDebounceTimer);
         searchProjects();
     });
+
+    // === Modal tambah (hanya ada bila user punya add_project) ===
+    const projectForm = document.getElementById('project-form');
+    if (projectForm) {
+        projectForm.addEventListener('submit', async function (event) {
+            event.preventDefault();
+            const { ok, data } = await postJson(projectForm.action, new FormData(projectForm));
+
+            if (ok) {
+                showToast('Berhasil', (data && data.message) || 'Project baru berhasil ditambahkan!', 'success');
+                projectForm.reset();
+                closeProjectModal();
+                fetchProjects(searchInput.value.trim());
+            } else {
+                // Tampilkan pesan error validasi dari server (400) / izin (403).
+                let pesan = (data && data.error) || 'Gagal menambahkan project.';
+                if (data && data.errors) {
+                    pesan = Object.values(data.errors)
+                        .map((errs) => errs.map((e) => e.message).join(' '))
+                        .join(' ');
+                }
+                showToast('Gagal', pesan, 'error');
+            }
+        });
+    }
 
     // Start application
     fetchProjects(searchInput.value.trim());

@@ -34,13 +34,7 @@
         </div>
     </header>
 
-    {% if messages %}
-    <div class="container flash-wrap">
-        {% for message in messages %}
-        <p class="flash flash-{{ message.tags }}">{{ message }}</p>
-        {% endfor %}
-    </div>
-    {% endif %}
+    {# Pesan messages tampil lewat toast dinamis (components/toast.html). #}
 
     {% block content %} {% endblock content %}
 
@@ -50,6 +44,7 @@
         </div>
     </footer>
     {% include 'components/toast.html' %}
+    <script src="{% static 'js/http.js' %}"></script>
     {% block scripts %} {% endblock scripts %}
 </body>
 
