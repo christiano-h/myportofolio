@@ -1,6 +1,5 @@
 from django.contrib import messages
-from django.core import serializers
-from django.http import HttpResponse, JsonResponse
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 
 from django.contrib.auth import login, logout
@@ -35,16 +34,11 @@ def show_main(request):
 
 
 def show_experience(request):
-    """Halaman publik /experience/ (read-only); CRUD ada di `manage_experience`."""
-    title_query = request.GET.get("title", "").strip()
-    experiences = Experience.objects.all().order_by("-started_at")
-
-    if title_query:
-        experiences = experiences.filter(title__icontains=title_query)
+    """Halaman publik /experience/ (read-only); data dimuat AJAX oleh template."""
     context = {
         "name": "ANO",
-        "experience_list": experiences,
-        "title_query": title_query,
+        "title_query": request.GET.get("title", "").strip(),
+        "form": ExperienceForm(),
     }
     return render(request, "experience.html", context)
 
@@ -186,6 +180,43 @@ def create_experience(request):
     }
     return render(request, "experience_form.html", context)
 
+@login_required(login_url="/login/")
+def create_experience_json(request):
+    if request.method != "POST":
+        return JsonResponse({"error": "Method not allowed"}, status=405)
+    
+    if not request.user.has_perm("main.add_experience"):
+        return JsonResponse({"error": "Anda tidak memiliki izin untuk menambahkan experience"}, status=403,)
+    
+    form = ExperienceForm(request.POST)
+    if not form.is_valid():
+        # Kunci `errors` + `get_json_data()` dipilih agar cocok dengan skrip modal
+        # di experience.html yang membaca `data.errors` lalu `e.message`.
+        return JsonResponse(
+            {"error": "Data tidak valid", "errors": form.errors.get_json_data()},
+            status=400,
+        )
+    
+    experience = form.save()
+    starred_users = experience.starred_by.all()
+    
+    return JsonResponse(
+        {
+            "pk": str(experience.pk),
+            "fields": {
+                "title": experience.title,
+                "job_title": experience.job_title,
+                "thumbnail": experience.thumbnail,
+                "summary": experience.summary,
+                "star_count": starred_users.count(),
+                "is_starred": request.user in starred_users,
+                "starred_by_names": ", ".join(u.username for u in starred_users),
+            },
+            "message": "Experience baru berhasil ditambahkan!"
+        },
+        status=201
+    )
+
 @login_required
 @permission_required("main.add_project", raise_exception=True)
 def create_project(request):
@@ -204,16 +235,77 @@ def create_project(request):
     return render(request, "project_form.html", context)
 
 
+@login_required(login_url="/login/")
+def create_project_json(request):
+    """Tambah project via AJAX; balas JSON 201/400/403. Hanya method POST."""
+    if request.method != "POST":
+        return JsonResponse({"error": "Method not allowed"}, status=405)
+
+    if not request.user.has_perm("main.add_project"):
+        return JsonResponse(
+            {"error": "Anda tidak memiliki izin untuk menambahkan project"}, status=403
+        )
+
+    form = ProjectForm(request.POST)
+    if not form.is_valid():
+        # Kunci `errors` + `get_json_data()` agar cocok dengan skrip modal di project.html.
+        return JsonResponse(
+            {"error": "Data tidak valid", "errors": form.errors.get_json_data()},
+            status=400,
+        )
+
+    project = form.save()
+    starred_users = project.starred_by.all()   # kosong untuk data baru
+
+    # Bentuk respons diseragamkan dengan satu item `get_projects_json`.
+    return JsonResponse(
+        {
+            "pk": str(project.pk),
+            "fields": {
+                "title": project.title,
+                "description": project.description,
+                "tech_stack": project.tech_stack,
+                "project_url": project.project_url,
+                "project_image_url": project.project_image_url,
+                "star_count": starred_users.count(),
+                "is_starred": request.user in starred_users,
+                "starred_by_names": ", ".join(u.username for u in starred_users),
+            },
+            "message": "Project baru berhasil ditambahkan!",
+        },
+        status=201,
+    )
+
+
 def get_experiences_json(request):
     """Endpoint JSON daftar experience (filter `?title=`)."""
     title_query = request.GET.get("title", "").strip()
-    experiences = Experience.objects.all()
+    experiences = Experience.objects.prefetch_related("starred_by").all().order_by("-started_at")
 
     if title_query:
         experiences = experiences.filter(title__icontains=title_query)
+    
+    data = []
+    for experience in experiences:
+        starred_users = experience.starred_by.all()
+        is_starred = request.user in starred_users if request.user.is_authenticated else False
+        starred_by_names = ", ".join([u.username for u in starred_users])
 
-    experiences_json = serializers.serialize("json", experiences, use_natural_foreign_keys=True)
-    return HttpResponse(experiences_json, content_type="application/json")
+        data.append({
+            "pk": str(experience.pk),
+            "fields": {
+                "title": experience.title,
+                "job_title": experience.job_title,
+                "category": experience.category,
+                "thumbnail": experience.thumbnail,
+                "summary": experience.summary,
+                "is_ongoing": experience.is_ongoing,
+                "star_count": starred_users.count(),
+                "is_starred": is_starred,
+                "starred_by_names": starred_by_names,
+            },
+        })
+    return JsonResponse(data, safe=False)
 
 @login_required
 @permission_required("main.delete_project", raise_exception=True)
