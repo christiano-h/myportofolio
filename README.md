@@ -195,4 +195,71 @@ Kelas : PBP B
 
    Dua hal yang perlu diingat: `serialize` menghasilkan string, sedangkan `deserialize` menghasilkan generator yang harus dijadikan `list` dulu, kalau tidak isinya habis setelah dipakai. Alur ini melewati JSON, bukan query langsung: objek hasilnya punya `_state.adding == True`, artinya objek itu dibentuk ulang, bukan dibaca dari database. Ini saya kunci di test `test_hasil_deserialize_json_berisi_objek_project`.
 
+### Tugas 5
+
+1. **Jelaskan apa itu debouncing dan mengapa teknik ini penting diterapkan pada fitur pencarian yang menggunakan AJAX!**
+
+   Debouncing itu seperti cara kita "menunda" eksekusi sebuah fungsi sampai pengguna berhenti melakukan sesuatu dalam jeda waktu tertentu. Yang ditunda di sini adalah pemanggilan AJAX-nya. Jadi tiap kali ada event `input`, timer lama di `clearTimeout` dulu, terus pasang `setTimeout` baru:
+
+   ```js
+   const SEARCH_DEBOUNCE_DELAY = 300;
+   let searchDebounceTimer;
+
+   searchInput.addEventListener("input", function () {
+       clearTimeout(searchDebounceTimer);
+       searchDebounceTimer = setTimeout(searchExperiences, SEARCH_DEBOUNCE_DELAY);
+   });
+   ```
+
+   Jadi kalau kita mengetik "ristek" (6 huruf) dengan cepat, yang terkirim ke `/api/experiences/?title=` bukan 6 request, melainkan **satu** request aja, yakni setelah kita berhenti mengetik 300 ms. Timer-nya selalu di-reset selama kita masih mengetik.
+
+   Kenapa penting justru pada AJAX: pencarian AJAX mengirim request di **setiap** perubahan input tanpa reload halaman. Tanpa debouncing, tiap ketikan berarti satu request HTTP. Akibatnya:
+
+   - **Server kebanjiran request.** 6 huruf = 6 query database, padahal hasil antar-ketikan belum tentu terpakai.
+   - **Hasil bisa datang tidak berurutan.** Respons untuk "ris" bisa tiba setelah respons "ristek", jadi kartu yang tampil malah hasil pencarian yang lama (*race condition*).
+   - **Boros** bandwidth dan kerja CPU browser.
+
+   Sebagai pengaman tambahan, di `fetchExperiences()` saya pakai `AbortController` jadi setiap request baru membatalkan request yang masih berjalan (`experiencesAbortController.abort()`). Debouncing mengurangi jumlah request, AbortController memastikan tidak ada respons basi yang menimpa tampilan.
+
+2. **Jelaskan fungsi dari penggunaan await ketika kita menggunakan fetch()! Apa yang akan terjadi jika kita tidak menggunakan await?**
+
+   `fetch()` itu mengembalikan **Promise**, bukan data. `await` "menunggu" Promise itu selesai lalu mengeluarkan nilai hasilnya, sehingga baris berikutnya baru jalan setelah datanya siap. Di proyek ini polanya:
+
+   ```js
+   const response = await fetch(url, { headers: { 'Accept': 'application/json' } });
+   if (!response.ok) throw new Error('Failed to fetch data');
+   const data = await response.json();
+   ```
+
+   Ada dua `await` dan keduanya penting: `await fetch(...)` menunggu respons HTTP datang, lalu `await response.json()` menunggu body selesai dibaca dan diubah jadi objek JavaScript (proses ini juga asinkron).
+
+   Kalau `await` tidak dipakai, `response` isinya bukan `Response`, melainkan **Promise** yang belum selesai. Akibatnya:
+
+   - `response.ok` jadi `undefined` (Promise tidak punya properti itu), jadi pengecekan gagal-berhasil saya salah.
+   - `response.json()` tidak bisa dipanggil — Promise bukan objek Response, yang muncul malah error `response.json is not a function`.
+   - Kalau diakali pakai `.then()`, kodenya jadi nested dan lebih susah dibaca dibanding `await`.
+
+   Intinya `fetch()` itu asinkron, kalau tidak ditunggu, JS langsung lanjut ke baris berikutnya padahal datanya belum ada. Karena itu juga fungsi loader data saya tandai `async`. Sisi baiknya, selama menunggu, UI gak stick, saya sudah menampilkan state "Memuat experience..." lewat `displayPageSection({ showLoading: true })`.
+
+3. **Jelaskan apa itu serangan XSS (Cross-Site Scripting) dan mengapa data yang ditampilkan melalui AJAX/JavaScript lebih rentan terhadap serangan ini daripada data yang ditampilkan langsung melalui template Django!**
+
+   XSS itu serangan ketika penyerang berhasil nyelipin **kode JavaScript** ke halaman yang dilihat orang lain, terus kode itu dijalankan browser seolah-olah bagian dari situs kita. Contohnya data yang isinya `<img src="x" onerror="alert('XSS!')">` — kalau string itu ditempel mentah ke HTML, browser bukan cuma nampilin teksnya, tapi jalanin `alert`-nya. Dampaknya bisa lebih parah dari `alert`: cookie sesi dicuri, aksi atas nama pengguna, dan sejenisnya.
+
+   Kenapa data lewat AJAX/JS lebih rentan? Karena **Django gak ikut campur** di jalur itu. Kalau lewat template, `{{ exp.title }}` otomatis di-escape Django: `<` jadi `&lt;`, `>` jadi `&gt;`, kutip jadi `&quot;` — jadi payload apa pun yang tampil cuma teksnya. Tapi begitu data datang sebagai JSON lewat `fetch()` terus saya susun sendiri pakai `innerHTML`, escaping otomatis itu gak berlaku lagi: `innerHTML` **gak** nge-escape, dia nafsirin string sebagai HTML.
+
+   Makanya di proyek ini saya lindungi dari dua sisi:
+
+   - **Sisi JavaScript:** tiap nilai teks dari API saya bungkus `escapeHtml()` (`static/js/http.js`) sebelum masuk template string kartu, misalnya `${escapeHtml(experience.title)}`. Fungsi ini niru autoescape Django, jadi karakter berbahaya diubah dulu sebelum ditempel ke `innerHTML`.
+
+   - **Sisi server:** di `ProjectForm`/`ExperienceForm`, method `clean_<field>` pakai `strip_tags` buat buang tag HTML dari input:
+     ```python
+     def clean_title(self):
+         title = strip_tags(self.cleaned_data["title"]).strip()
+         if not title:
+             raise ValidationError("Nama proyek tidak boleh hanya berisi tag HTML.")
+         return title
+     ```
+
+   Jadi pertahanannya berlapis: server nolak/bersihin tag pas nyimpen, dan JS nge-escape pas nampilin. Ini saya kunci di test `ProjectXssGuardTests` dan `ExperienceXssGuardTests` — payload `<img src="x" onerror="alert('XSS!')">` harus tampil sebagai teks biasa dan `alert` tidak boleh jalan.
+
 > AI disclosure : [ristek.link/AI-DISCLOSURE-PBP](https://ristek.link/AI-DISCLOSURE-PBP)

@@ -1,8 +1,20 @@
   {% load static %}
+  {% if messages %}
+  <script>
+      // Data HARUS di-set SEBELUM toast.js dimuat: IIFE di toast.js langsung
+      // membacanya saat file itu dieksekusi.
+      // `escapejs` mencegah XSS saat teks pesan disisipkan ke JavaScript.
+      window.__djangoMessages = [
+          {% for message in messages %}
+          { text: "{{ message|escapejs }}", tags: "{{ message.tags|escapejs }}" }{% if not forloop.last %},{% endif %}
+          {% endfor %}
+      ];
+  </script>
+  {% endif %}
   <div id="toast-component" class="toast-component toast-hidden" popover="manual">
       <div class="toast-content">
-          <h3 id="toast-title" class="toast-title">This is a Sample Title</h3>
-          <p id="toast-message" class="toast-message">This is a Sample Message</p>
+          <h3 id="toast-title" class="toast-title"></h3>
+          <p id="toast-message" class="toast-message"></p>
       </div>
   </div>
   <script src="{% static 'js/toast.js' %}"></script>

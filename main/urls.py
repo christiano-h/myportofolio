@@ -2,7 +2,9 @@ from django.urls import path
 
 from main.views import (
     create_experience,
+    create_experience_json,
     create_project,
+    create_project_json,
     delete_experience,
     delete_project,
     get_experiences_json,
@@ -39,12 +41,16 @@ urlpatterns = [
     path("experience/manage/<uuid:experience_id>/update/", update_experience, name="update_experience"),
     path("projects/manage/", manage_projects, name="manage_projects"),
     path("projects/manage/add/", create_project, name="create_project"),
+    # Wajib di atas `projects/<path:title>/`: konverter `<path:>` menelan "/".
+    path("projects/manage/add/json/", create_project_json, name="create_project_json"),
     path("projects/manage/<int:project_id>/delete/", delete_project, name="delete_project"),
     path("projects/manage/<int:project_id>/update/", update_project, name="update_project"),
 
     # Wajib di atas `experience/<path:title>/`: konverter `<path:...>` menelan
     # "/" sehingga rute detail bisa menyerobot URL star ini.
     path("experience/<uuid:experience_id>/star/", toggle_experience_star, name="toggle_experience_star"),
+    
+    path("experience/manage/add/json/", create_experience_json, name="create_experience_json"),
 
     # === Halaman blog (detail) ===
     path("experience/<path:title>/", show_experience_detail, name="show_experience_detail"),

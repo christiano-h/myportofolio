@@ -83,6 +83,21 @@ class ExperienceForm(ModelForm):
                 }
             ),
         }
+    def clean_title(self):
+        title = strip_tags(self.cleaned_data["title"]).strip()
+        if not title:
+            raise ValidationError("Nama experience tidak boleh hanya berisi tag HTML.")
+        return title
+
+    def clean_job_title(self):
+        return strip_tags(self.cleaned_data["job_title"] or "").strip()
+
+    def clean_summary(self):
+        return strip_tags(self.cleaned_data["summary"] or "").strip()
+
+    def clean_content(self):
+        return strip_tags(self.cleaned_data["content"] or "").strip()
+
 
 
 class ProjectForm(ModelForm):

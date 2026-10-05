@@ -45,6 +45,11 @@ UUID_TEST = "3f1a4c6e-0000-4000-8000-000000000000"
 PROJECT_ID_SENTINEL = 999999999
 PROJECT_TITLE_SENTINEL = "PROJECT_TITLE_SENTINEL"
 
+# Sentinela di templates/experience.html (kartu dibangun JS juga). Id Experience
+# berupa UUID, jadi sentinel bintangnya harus UUID valid, bukan angka.
+EXPERIENCE_ID_SENTINEL = "00000000-0000-4000-8000-000000000000"
+EXPERIENCE_TITLE_SENTINEL = "EXPERIENCE_TITLE_SENTINEL"
+
 # Permission pembentuk peran "Editor": boleh MENGUBAH, tidak boleh menambah
 # (`add_*`) atau menghapus (`delete_*`).
 PERMISSION_EDITOR = ["change_project", "change_experience"]
@@ -255,31 +260,41 @@ class ShowExperienceViewTests(ExperienceDataMixin, TestCase):
         self.assertTemplateUsed(response, "experience.html")
 
     def test_urutan_terbaru_dulu(self):
-        response = self.client.get(reverse("main:show_experience"))
-        judul = [e.title for e in response.context["experience_list"]]
+        """Urutan kartu ditentukan endpoint JSON (terbaru dulu), bukan context."""
+        data = self.client.get(reverse("main:get_experiences_json")).json()
+        judul = [d["fields"]["title"] for d in data]
         self.assertEqual(judul, ["Pengalaman Baru", "Pengalaman Lama"])
 
     def test_tidak_menampilkan_project(self):
         Project.objects.create(title="Project X")
-        response = self.client.get(reverse("main:show_experience"))
-        self.assertEqual(len(response.context["experience_list"]), 2)
-        self.assertNotContains(response, "Project X")
+        data = self.client.get(reverse("main:get_experiences_json")).json()
+        self.assertEqual(len(data), 2)
+        self.assertNotContains(
+            self.client.get(reverse("main:show_experience")), "Project X"
+        )
 
     def test_kartu_punya_link_ke_halaman_detail(self):
+        """Kartu dibangun JS: HTML memuat template URL ber-sentinel judul."""
         response = self.client.get(reverse("main:show_experience"))
         self.assertContains(response, "project-card-link")
-        self.assertContains(response, "/experience/Pengalaman%20Baru/")
+        self.assertContains(
+            response,
+            reverse("main:show_experience_detail", args=[EXPERIENCE_TITLE_SENTINEL]),
+        )
 
     def test_kicker_dan_jabatan_dirender_di_kartu(self):
+        """Jabatan datang dari endpoint JSON; kartu JS memakai `.portfolio-kicker`."""
         response = self.client.get(reverse("main:show_experience"))
         self.assertContains(response, "portfolio-kicker")
-        self.assertContains(response, "Ketua")
+        data = self.client.get(reverse("main:get_experiences_json")).json()
+        jabatan = {d["fields"]["title"]: d["fields"]["job_title"] for d in data}
+        self.assertEqual(jabatan["Pengalaman Baru"], "Ketua")
 
     def test_kicker_tidak_dirender_kalau_job_title_kosong(self):
         Experience.objects.all().delete()
         Experience.objects.create(title="Tanpa Jabatan", summary="x")
-        response = self.client.get(reverse("main:show_experience"))
-        self.assertNotContains(response, "portfolio-kicker")
+        data = self.client.get(reverse("main:get_experiences_json")).json()
+        self.assertFalse(data[0]["fields"]["job_title"])
 
     def test_pesan_kosong_kalau_belum_ada_experience(self):
         Experience.objects.all().delete()
@@ -728,9 +743,8 @@ class JsonApiViewTests(TestCase):
 class JsonApiNoLeakTests(TestCase):
     """JSON API tidak membocorkan identitas user (poin 14 docstring modul).
 
-    `/api/experiences/` masih memakai serializer Django (M2M `starred_by` dikirim
-    sebagai natural key / username), sedangkan `/api/projects/` memakai payload
-    custom: username-nya ada di `starred_by_names`, bukan pk user.
+    Baik `/api/experiences/` maupun `/api/projects/` memakai payload custom:
+    username dikirim lewat `starred_by_names`, bukan pk user atau M2M mentah.
     """
 
     def setUp(self):
@@ -752,12 +766,13 @@ class JsonApiNoLeakTests(TestCase):
 
     def test_starred_by_berisi_username_bukan_pk_user(self):
         data_exp = self._get_json("get_experiences_json").json()
-        self.assertEqual(data_exp[0]["fields"]["starred_by"], [["penggemar"]])
+        self.assertEqual(data_exp[0]["fields"]["starred_by_names"], "penggemar")
 
         data_proj = self._get_json("get_projects_json").json()
         self.assertEqual(data_proj[0]["fields"]["starred_by_names"], "penggemar")
-        # Payload project tidak mengirim M2M mentah (yang bisa membawa pk user).
+        # Payload tidak mengirim M2M mentah (yang bisa membawa pk user).
         self.assertNotIn("starred_by\":", self._get_json("get_projects_json").content.decode())
+        self.assertNotIn("starred_by\":", self._get_json("get_experiences_json").content.decode())
 
     def test_payload_tidak_memuat_kolom_pribadi_user(self):
         for nama in ["get_projects_json", "get_experiences_json"]:
@@ -991,8 +1006,9 @@ class UpdateExperienceViewTests(AuthenticatedTestCase):
         self.assertContains(r, reverse("main:update_experience", args=[self.experience.pk]))
 
     def test_kartu_publik_tetap_menuju_detail(self):
+        """Kartu JS menaut ke detail lewat template URL ber-sentinel judul."""
         r = self.client.get(reverse("main:show_experience"))
-        self.assertContains(r, reverse("main:show_experience_detail", args=[self.experience.title]))
+        self.assertContains(r, reverse("main:show_experience_detail", args=[EXPERIENCE_TITLE_SENTINEL]))
         self.assertNotContains(r, reverse("main:update_experience", args=[self.experience.pk]))
 
 class ManageAccessTests(TestCase):
@@ -1270,7 +1286,10 @@ class ToggleStarExperienceViewTests(TestCase):
 
         self.client.force_login(self.user)
         r = self.client.get(reverse("main:show_experience"))
-        self.assertContains(r, self.url)
+        # URL star kartu dibangun dari sentinel id; id aslinya datang dari JSON.
+        self.assertContains(
+            r, reverse("main:toggle_experience_star", args=[EXPERIENCE_ID_SENTINEL])
+        )
         self.assertContains(r, "csrfmiddlewaretoken")
         self.assertContains(r, "button-star")
 
@@ -1319,4 +1338,112 @@ class ProjectXssGuardTests(AuthenticatedTestCase):
         r = self.client.get(reverse("main:show_projects"))
         self.assertNotContains(r, self.payload)
         # kartu dibangun JS, jadi yang boleh ada adalah pemanggilan escapeHtml
+        self.assertContains(r, "escapeHtml(")
+
+class ExperiencePageAjaxTests(TestCase):
+    """Halaman /experience/ kini kerangka AJAX (pola sama dengan /projects/)."""
+
+    def setUp(self):
+        Experience.objects.all().delete()
+        self.exp = Experience.objects.create(title="RISTEK", job_title="Anggota")
+
+    def test_kerangka_ajax_tanpa_experience_list_di_context(self):
+        r = self.client.get(reverse("main:show_experience"))
+        self.assertEqual(r.status_code, 200)
+        self.assertNotIn("experience_list", r.context)
+        self.assertContains(r, reverse("main:get_experiences_json"))
+        self.assertContains(r, 'id="grid"')
+        self.assertContains(r, "escapeHtml(")
+
+    def test_anonim_tidak_melihat_tombol_tambah(self):
+        r = self.client.get(reverse("main:show_experience"))
+        self.assertNotContains(r, 'id="experience-form"')
+
+
+class CreateExperienceJsonTests(TestCase):
+    """create_experience_json: 201 valid, 400 invalid, 403 tanpa hak, 302 anonim."""
+
+    URL = None
+
+    def setUp(self):
+        Experience.objects.all().delete()
+        self.URL = reverse("main:create_experience_json")
+
+    def test_anonim_diarahkan_ke_login(self):
+        r = self.client.post(self.URL, {"title": "X", "category": "full-time"})
+        self.assertEqual(r.status_code, 302)
+
+    def test_pengguna_biasa_403_json(self):
+        self.client.force_login(User.objects.create_user("biasa", password="rahasia"))
+        r = self.client.post(self.URL, {"title": "X", "category": "full-time"})
+        self.assertEqual(r.status_code, 403)
+        self.assertIn("error", r.json())
+
+    def test_owner_201_json_dan_data_tersimpan(self):
+        self.client.force_login(User.objects.create_superuser("owner", "o@e.com", "rahasia-owner"))
+        r = self.client.post(self.URL, {"title": "RISTEK", "category": "full-time",
+                                        "job_title": "Anggota", "summary": "s", "content": "", "thumbnail": ""})
+        self.assertEqual(r.status_code, 201)
+        self.assertEqual(Experience.objects.count(), 1)
+
+    def test_input_tidak_valid_400_json_dengan_errors(self):
+        self.client.force_login(User.objects.create_superuser("owner", "o@e.com", "rahasia-owner"))
+        r = self.client.post(self.URL, {"title": "", "category": "full-time"})
+        self.assertEqual(r.status_code, 400)
+        self.assertIn("errors", r.json())
+
+
+class CreateProjectJsonTests(TestCase):
+    """create_project_json: 201 valid, 400 invalid, 403 tanpa hak, 302 anonim."""
+
+    def setUp(self):
+        Project.objects.all().delete()
+        self.URL = reverse("main:create_project_json")
+
+    def test_anonim_diarahkan_ke_login(self):
+        r = self.client.post(self.URL, {"title": "X"})
+        self.assertEqual(r.status_code, 302)
+
+    def test_pengguna_biasa_403_json(self):
+        self.client.force_login(User.objects.create_user("biasa", "b@e.com", "rahasia"))
+        r = self.client.post(self.URL, {"title": "X"})
+        self.assertEqual(r.status_code, 403)
+        self.assertIn("error", r.json())
+
+    def test_owner_201_json_dan_data_tersimpan(self):
+        self.client.force_login(User.objects.create_superuser("owner", "o@e.com", "rahasia-owner"))
+        r = self.client.post(self.URL, {"title": "SINTAKS", "description": "deskripsi"})
+        self.assertEqual(r.status_code, 201)
+        self.assertEqual(Project.objects.count(), 1)
+
+    def test_input_tidak_valid_400_json_dengan_errors(self):
+        self.client.force_login(User.objects.create_superuser("owner", "o@e.com", "rahasia-owner"))
+        r = self.client.post(self.URL, {"title": ""})
+        self.assertEqual(r.status_code, 400)
+        self.assertIn("errors", r.json())
+
+
+class ExperienceXssGuardTests(TestCase):
+    payload = '<img src="x" onerror="alert(\'XSS!\')">'
+
+    def setUp(self):
+        Experience.objects.all().delete()
+
+    def test_form_menolak_judul_yang_hanya_tag_html(self):
+        from main.forms import ExperienceForm
+        form = ExperienceForm({"title": self.payload, "category": "full-time"})
+        self.assertFalse(form.is_valid())
+
+    def test_form_membersihkan_tag(self):
+        from main.forms import ExperienceForm
+        form = ExperienceForm({"title": "Halo <b>dunia</b>", "category": "full-time",
+                               "summary": "<i>Ringkas</i>"})
+        self.assertTrue(form.is_valid())
+        self.assertEqual(form.cleaned_data["title"], "Halo dunia")
+        self.assertEqual(form.cleaned_data["summary"], "Ringkas")
+
+    def test_halaman_publik_tidak_memuat_tag_mentah(self):
+        Experience.objects.create(title=self.payload)
+        r = self.client.get(reverse("main:show_experience"))
+        self.assertNotContains(r, self.payload)
         self.assertContains(r, "escapeHtml(")
