@@ -23,7 +23,7 @@ tambah/hapus ada di /projects/manage/.
                         Manage Projects
                     </a>
                     {% endif %}
-                    {% if perms.main.add_project %}
+                    {% if user.is_superuser %}
                     <button type="button" class="button project-add-button" popovertarget="add-project-modal">
                         <span aria-hidden="true">+</span>
                         Tambah Proyek
@@ -65,20 +65,25 @@ tambah/hapus ada di /projects/manage/.
     </section>
 </main>
 
-{% if perms.main.add_project %}
+{% if user.is_superuser %}
 {% include "components/project_form_modal.html" %}
 {% endif %}
 
 
+{% csrf_token %}
 <script>
     // Konfigurasi
     // Sentinela ID harus ANGKA (rute star memakai <int:project_id>); sentinela judul
     // berupa teks karena rute detail memakai <path:title>.
-    const BASE_PROJECTS_ENDPOINT = "{% url 'main:get_projects_json' %}";
+    const BASE_PROJECTS_ENDPOINT = "{% url 'api:project-list' %}";
     const PROJECT_ID_SENTINEL = '999999999';
     const PROJECT_TITLE_SENTINEL = 'PROJECT_TITLE_SENTINEL';
-    const TOGGLE_STAR_URL = "{% url 'main:toggle_star' 999999999 %}";
+    const TOGGLE_STAR_URL = "{% url 'api:project-star' 999999999 %}";
     const PROJECT_DETAIL_URL = "{% url 'main:show_project_detail' 'PROJECT_TITLE_SENTINEL' %}";
+    const DETAIL_PROJECT_ENDPOINT = "{% url 'api:project-detail' 999999999 %}";
+    const STAR_PROJECT_ENDPOINT = TOGGLE_STAR_URL;
+    const IS_SUPERUSER = "{{ user.is_superuser|yesno:'true,false' }}" === "true";
+    function projectEndpoint(pattern, id) { return pattern.replace('999999999', id); }
     const LOGIN_URL = "{% url 'main:login' %}";
     const NEXT_PATH = "{{ request.path }}";
     const IS_AUTHENTICATED = "{{ user.is_authenticated|yesno:'true,false' }}" === "true";
@@ -107,7 +112,7 @@ tambah/hapus ada di /projects/manage/.
     }
 
     // Baris aksi star: meniru components/project_star.html — pengunjung anonim melihat
-    // tautan login, pengguna login melihat form POST ke endpoint `toggle_star`.
+    // tautan login, pengguna login memberi star melalui API DRF.
     function buildStarFooter(project, projectId) {
         const starCountHtml = `<span class="star-count">${escapeHtml(project.star_count)}</span>`;
 
@@ -132,17 +137,12 @@ tambah/hapus ada di /projects/manage/.
             : 'Jadilah yang pertama memberi star';
 
         return `
-            <form method="post" action="${escapeHtml(starUrl)}" class="star-form">
-                {% csrf_token %}
-                <input type="hidden" name="next" value="${NEXT_PATH}">
-                <button type="submit"
-                        class="button button-star${isStarredClass}"
-                        title="${starTitle}">
-                    <span aria-hidden="true">★</span>
-                    ${starText}
-                    ${starCountHtml}
+            <div class="star-form">
+                <button type="button" data-action="star" data-id="${escapeHtml(projectId)}"
+                    class="button button-star${isStarredClass}" title="${starTitle}">
+                    <span aria-hidden="true">★</span> ${starText} ${starCountHtml}
                 </button>
-            </form>`;
+            </div>`;
     }
 
     // Meniru `quote(value, safe='/')` yang dipakai Django saat `reverse()` membentuk
@@ -166,8 +166,8 @@ tambah/hapus ada di /projects/manage/.
     // components/project_card.html supaya outline, glare, hover, dan carousel HP
     // (`.project-card-outline`, `.portfolio-*`) berperilaku seperti versi server.
     function buildProjectCardElement(item) {
-        const project = item.fields;
-        const projectId = item.pk;
+        const project = item;
+        const projectId = item.id;
         const detailUrl = PROJECT_DETAIL_URL.replace(
             PROJECT_TITLE_SENTINEL,
             encodeTitleForPath(project.title)
@@ -197,6 +197,7 @@ tambah/hapus ada di /projects/manage/.
                 </article>
             </a>
             ${buildStarFooter(project, projectId)}
+            ${IS_SUPERUSER ? `<button type="button" class="button button-danger" data-action="delete" data-id="${escapeHtml(projectId)}">Hapus</button>` : ''}
         `;
 
         return cardOutline;
@@ -266,33 +267,73 @@ tambah/hapus ada di /projects/manage/.
         searchProjects();
     });
 
-    // === Modal tambah (hanya ada bila user punya add_project) ===
-    const projectForm = document.getElementById('project-form');
-    if (projectForm) {
-        projectForm.addEventListener('submit', async function (event) {
-            event.preventDefault();
-            const { ok, data } = await postJson(projectForm.action, new FormData(projectForm));
+const projectForm = document.getElementById('project-form');
+function apiErrorMessage(data, status) {
+    const messages = Object.values(data).flat().filter(value => typeof value === 'string');
+    return messages.join(' ') || `Request failed (HTTP ${status}).`;
+}
 
-            if (ok) {
-                showToast('Berhasil', (data && data.message) || 'Project baru berhasil ditambahkan!', 'success');
-                projectForm.reset();
-                closeProjectModal();
-                fetchProjects(searchInput.value.trim());
-            } else {
-                // Tampilkan pesan error validasi dari server (400) / izin (403).
-                let pesan = (data && data.error) || 'Gagal menambahkan project.';
-                if (data && data.errors) {
-                    pesan = Object.values(data.errors)
-                        .map((errs) => errs.map((e) => e.message).join(' '))
-                        .join(' ');
-                }
-                showToast('Gagal', pesan, 'error');
-            }
-        });
+async function writeProject(url, method, payload) {
+    const response = await fetch(url, {
+        method,
+        headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken'),
+        },
+        body: payload === undefined ? undefined : JSON.stringify(payload),
+    });
+    if (response.status === 204) return null;
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(apiErrorMessage(data, response.status));
+    return data;
+}
+
+async function addProject(event) {
+    event.preventDefault();
+    const button = projectForm.querySelector('button[type="submit"]');
+    button.disabled = true;
+    try {
+        const fields = new FormData(projectForm);
+        const payload = Object.fromEntries([
+            'title', 'description', 'tech_stack', 'project_url', 'thumbnail', 'content',
+        ].map(name => [name, fields.get(name)]));
+        payload.project_image_url = payload.thumbnail;
+        delete payload.thumbnail;
+        await writeProject(BASE_PROJECTS_ENDPOINT, 'POST', payload);
+        projectForm.reset();
+        document.getElementById('add-project-modal').hidePopover();
+        showToast('Success', 'Project created.', 'success');
+        await fetchProjects(searchInput.value.trim());
+    } catch (error) {
+        showToast('Could not create project', error.message, 'error');
+    } finally {
+        button.disabled = false;
     }
+}
 
-    // Start application
-    fetchProjects(searchInput.value.trim());
+if (projectForm) projectForm.addEventListener('submit', addProject);
+
+gridContainer.addEventListener('click', async function(event) {
+    const button = event.target.closest('button[data-action]');
+    if (!button || button.disabled) return;
+    const action = button.dataset.action;
+    if (action === 'delete' && !window.confirm('Delete this project?')) return;
+    button.disabled = true;
+    try {
+        const pattern = action === 'star' ? STAR_PROJECT_ENDPOINT : DETAIL_PROJECT_ENDPOINT;
+        await writeProject(projectEndpoint(pattern, button.dataset.id),
+            action === 'star' ? 'POST' : 'DELETE');
+        showToast('Success', action === 'star' ? 'Star updated.' : 'Project deleted.', 'success');
+        await fetchProjects(searchInput.value.trim());
+    } catch (error) {
+        showToast('Request failed', error.message, 'error');
+    } finally {
+        button.disabled = false;
+    }
+});
+
+fetchProjects(searchInput.value.trim());
 </script>
 
 {% endblock content %}
