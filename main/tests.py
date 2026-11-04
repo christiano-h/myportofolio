@@ -610,11 +610,11 @@ class ShowProjectsViewTests(ProjectDataMixin, TestCase):
         """Halaman publik kini kerangka AJAX: wadah #grid + endpoint JSON.
 
         Data tidak lagi dikirim lewat context (`project_list`), melainkan di-fetch
-        `project.html` dari `/api/projects/`.
+        `project.html` dari `/api/v1/projects/`.
         """
         r = self.client.get(reverse("main:show_projects"))
         self.assertNotIn("project_list", r.context)
-        self.assertContains(r, reverse("main:get_projects_json"))
+        self.assertContains(r, reverse("api:project-list"))
         self.assertContains(r, 'id="grid"')
 
     def test_kartu_builder_pakai_markup_komponen_project_card(self):
@@ -1233,7 +1233,7 @@ class ToggleStarViewTests(TestCase):
         self.client.force_login(self.user)
         r = self.client.get(reverse("main:show_projects"))
         # URL star kartu dibangun dari sentinel id; id aslinya datang dari JSON.
-        self.assertContains(r, reverse("main:toggle_star", args=[PROJECT_ID_SENTINEL]))
+        self.assertContains(r, reverse("api:project-star", args=[PROJECT_ID_SENTINEL]))
         self.assertContains(r, "csrfmiddlewaretoken")
         self.assertContains(r, "button-star")
 
@@ -1288,7 +1288,7 @@ class ToggleStarExperienceViewTests(TestCase):
         r = self.client.get(reverse("main:show_experience"))
         # URL star kartu dibangun dari sentinel id; id aslinya datang dari JSON.
         self.assertContains(
-            r, reverse("main:toggle_experience_star", args=[EXPERIENCE_ID_SENTINEL])
+            r, reverse("api:experience-star", args=[EXPERIENCE_ID_SENTINEL])
         )
         self.assertContains(r, "csrfmiddlewaretoken")
         self.assertContains(r, "button-star")
@@ -1351,7 +1351,7 @@ class ExperiencePageAjaxTests(TestCase):
         r = self.client.get(reverse("main:show_experience"))
         self.assertEqual(r.status_code, 200)
         self.assertNotIn("experience_list", r.context)
-        self.assertContains(r, reverse("main:get_experiences_json"))
+        self.assertContains(r, reverse("api:experience-list"))
         self.assertContains(r, 'id="grid"')
         self.assertContains(r, "escapeHtml(")
 
