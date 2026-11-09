@@ -1,10 +1,10 @@
 import uuid
-from django.contrib.auth.models import Group, User
+from django.contrib.auth.models import Group, Permission, User
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
 
-from main.models import Project
+from main.models import Experience, Project
 
 
 class ProjectAPITest(APITestCase):
@@ -218,12 +218,106 @@ class ExperienceAPITest(ProjectAPITest):
         self.assertEqual(self.client.delete(self.detail_url).status_code, 403)
 
     def test_session_write_without_csrf_is_rejected(self):
-        from main.models import Experience
         client = APIClient(enforce_csrf_checks=True)
-        client.login(username="owner", password="test-password")
-        self.assertEqual(client.post(self.list_url, self.payload, format="json").status_code, 403)
-        self.assertEqual(Experience.objects.count(), 1)
 
+        self.assertTrue(
+            client.login(username="owner", password="test-password")
+        )
+
+        response = client.post(
+            self.list_url,
+            self.payload,
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(Experience.objects.count(), 1)
+        
+    def test_owner_delete_removes_database_record(self):
+        self.client.force_authenticate(user=self.owner)
+        experience_id = self.project.pk
+
+        response = self.client.delete(self.detail_url)
+
+        self.assertEqual(response.status_code, 204)
+        self.assertEqual(response.content, b"")
+        self.assertFalse(
+            Experience.objects.filter(pk=experience_id).exists()
+        )
+        
+    def test_text_input_is_cleaned_before_saving(self):
+        self.client.force_authenticate(user=self.owner)
+
+        response = self.client.patch(
+            self.detail_url,
+            {
+                "title": "<b>RISTEK</b>",
+                "job_title": "<i>Developer</i>",
+                "summary": "<p>Ringkasan</p>",
+                "content": "<div>Isi pengalaman</div>",
+            },
+            format="json",
+        )
+        self.assertEqual(response.status_code, 200)
+
+        self.project.refresh_from_db()
+        self.assertEqual(self.project.title, "RISTEK")
+        self.assertEqual(self.project.job_title, "Developer")
+        self.assertEqual(self.project.summary, "Ringkasan")
+        self.assertEqual(self.project.content, "Isi pengalaman")
+        
+    def test_invalid_input_does_not_change_database(self):
+        self.client.force_authenticate(user=self.owner)
+
+        count_before = Experience.objects.count()
+        title_before = self.project.title
+
+        response = self.client.post(
+            self.list_url,
+            {**self.payload, "title": "<b></b>"},
+            format="json",
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("title", response.data)
+        self.assertEqual(Experience.objects.count(), count_before)
+
+        response = self.client.patch(
+            self.detail_url,
+            {"title": "<b></b>"},
+            format="json",
+        )
+        self.assertEqual(response.status_code, 400)
+
+        self.project.refresh_from_db()
+        self.assertEqual(self.project.title, title_before)
+    def test_star_uses_logged_in_user_and_updates_relation(self):
+        response = self.client.post(self.star_url)
+
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(self.project.starred_by.count(), 0)
+
+        self.client.force_authenticate(user=self.visitor)
+
+        response = self.client.post(
+            self.star_url,
+            {"user_id": self.owner.pk},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.data["is_starred"])
+        self.assertTrue(
+            self.project.starred_by.filter(pk=self.visitor.pk).exists()
+        )
+        self.assertFalse(
+            self.project.starred_by.filter(pk=self.owner.pk).exists()
+        )
+
+        response = self.client.post(self.star_url)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.data["is_starred"])
+        self.assertEqual(self.project.starred_by.count(), 0)
 
 class ProjectFieldMappingTest(APITestCase):
     def test_existing_thumbnail_and_content_are_writable(self):
