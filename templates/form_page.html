@@ -21,9 +21,10 @@ Blok yang diisi halaman anak:
         <section class="experience-section">
             <div class="container">
                 <h1>{% block form_heading %}Form{% endblock %}</h1>
-                <form method="post"
-                      action="{% block form_action %}{% endblock %}"
-                      class="project-form">
+                    <form method="post"
+                        {% block form_attributes %}{% endblock %}
+                        action="{% block form_action %}{% endblock %}"
+                        class="project-form">
                     {% csrf_token %}
                     {% include "components/form_fields.html" with form=form %}
                     <div class="button-group">
