@@ -262,4 +262,30 @@ Kelas : PBP B
 
    Jadi pertahanannya berlapis: server nolak/bersihin tag pas nyimpen, dan JS nge-escape pas nampilin. Ini saya kunci di test `ProjectXssGuardTests` dan `ExperienceXssGuardTests` — payload `<img src="x" onerror="alert('XSS!')">` harus tampil sebagai teks biasa dan `alert` tidak boleh jalan.
 
+### Tugas 6
+
+1. **Jelaskan apa yang dimaksud dengan REST dan mengapa mengembalikan JSON saja belum cukup untuk menyebut sebuah API sebagai RESTful! Jelaskan pula perbedaan PUT dan PATCH beserta contoh kapan masing-masing sebaiknya digunakan!**
+
+   REST (*Representational State Transfer*) itu gaya merancang API dengan resource, method HTTP, dan status respons yang sesuai. Contohnya `/api/v1/experiences/` menunjuk data Experience, lalu GET buat membaca dan POST buat menambah. Jadi mengembalikan JSON aja belum cukup: JSON cuma format data, sedangkan REST juga mengatur cara API bekerja, termasuk prinsip *stateless*, yakni tiap request membawa informasi yang dibutuhkan tanpa bergantung pada ingatan server tentang request sebelumnya.
+
+   **PUT** dipakai untuk mengirim representasi pengganti, misalnya seluruh data editable satu Experience. **PATCH** buat mengubah sebagian, misalnya cukup kirim `{"job_title": "Lead Developer"}` tanpa mengirim judul atau ringkasan. Di proyek saya, PATCH memakai `partial=True`, jadi field yang tidak dikirim tetap memakai nilai sebelumnya. PUT tetap memeriksa field wajib, tapi field opsional yang tidak dikirim tidak otomatis semuanya dikosongkan oleh serializer saya.
+
+2. **Jelaskan peran serializer pada Django REST Framework! Apa keuntungannya dibandingkan merakit dictionary secara manual dengan JsonResponse seperti pada Tutorial 05?**
+
+   Serializer itu penghubung antara objek model dan data API. Saat GET, objek diubah jadi data yang siap dirender sebagai JSON. Saat POST/PATCH, input divalidasi dulu, lalu `.save()` membuat atau memperbarui objek. Di `ExperienceSerializer`, saya juga menentukan field yang boleh tampil, membersihkan teks lewat `validate_<field>`, dan menghitung informasi star sebagai field read-only.
+
+   Dibanding Tutorial 05 yang merakit dictionary sendiri lewat `JsonResponse`, serializer bikin bentuk data dan validasinya terkumpul di satu tempat. Jadi gak perlu mengulang pemetaan field dan penanganan error di tiap endpoint. Input salah bisa langsung mendapat `400` beserta pesan per field, sementara data sensitif seperti email atau password gak ikut tampil karena daftar field ditulis eksplisit.
+
+3. **Jelaskan perbedaan autentikasi dan otorisasi pada Django REST Framework! Mengapa hak akses harus diperiksa dengan permission class di server, bukan hanya dengan menyembunyikan tombol di template?**
+
+   Autentikasi itu mengenali akun yang mengirim request, sedangkan otorisasi menentukan tindakan yang boleh dia lakukan. Di proyek saya, `SessionAuthentication` mengenali pengguna melalui session Django. Setelah itu permission class memeriksa izinnya: pengunjung boleh baca, pengguna biasa juga boleh star, Editor boleh update, dan Owner boleh tambah serta hapus data.
+
+   Menyembunyikan tombol aja gak cukup karena pengguna masih bisa mengirim request langsung lewat Console atau Postman. Makanya kondisi di template cuma mengatur tampilan, sedangkan `IsPortfolioOwnerOrEditorOrReadOnly` benar-benar menolak tindakan terlarang di server dengan `403`. Untuk Editor, saya tetap memakai `has_perm("main.change_experience")` sesuai implementasi tugas sebelumnya.
+
+4. **Jelaskan mengapa permintaan yang mengubah data tetap memerlukan token CSRF ketika API memakai SessionAuthentication! Mengapa test yang memakai force_authenticate tidak cukup untuk membuktikan bahwa perlindungan CSRF berjalan?**
+
+   `SessionAuthentication` masih memakai session cookie yang bisa otomatis disertakan browser. Jadi cookie login saja belum membuktikan bahwa request tulis memang dikehendaki pengguna; CSRF mencoba memanfaatkan hal itu untuk mengirim tindakan atas nama pengguna. Karena itu POST, PUT, PATCH, dan DELETE dari akun yang terautentikasi melalui session tetap memerlukan token. Di proyek saya token dibaca lewat `getCookie('csrftoken')`, lalu dikirim melalui header `X-CSRFToken`.
+
+   `force_authenticate()` langsung memasang akun pada request test dan melewati jalur autentikasi normal, jadi cocok buat menguji permission, tapi belum membuktikan CSRF berjalan. Untuk itu saya pakai `APIClient(enforce_csrf_checks=True)` dan `.login()`, pastikan login berhasil, lalu kirim POST tanpa token. Hasilnya harus `403` dan database tidak berubah. Dengan begitu yang diuji memang penolakan CSRF pada session login, bukan sekadar penolakan pengguna anonim.
+
 > AI disclosure : [ristek.link/AI-DISCLOSURE-PBP](https://ristek.link/AI-DISCLOSURE-PBP)
