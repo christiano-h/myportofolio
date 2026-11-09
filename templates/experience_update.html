@@ -2,6 +2,71 @@
 
 {% block page_title %}Edit Experience{% endblock %}
 {% block form_heading %}Ubah Experience{% endblock %}
+
+{% block form_attributes %}
+id="experience-update-form"
+data-api-url="{% url 'api:experience-detail' experience.id %}"
+{% endblock %}
+
 {% block form_action %}{% url 'main:update_experience' experience.id %}{% endblock %}
 {% block submit_label %}Simpan Perubahan{% endblock %}
 {% block cancel_url %}{% url 'main:manage_experience' %}{% endblock %}
+
+{% block scripts %}
+<script>
+const updateForm = document.getElementById('experience-update-form');
+
+updateForm.addEventListener('submit', async function (event) {
+
+    event.preventDefault();
+    const submitButton = updateForm.querySelector('button[type="submit"]');
+
+    if (submitButton.disabled) return;
+    submitButton.disabled = true;
+
+    try {
+        const fields = new FormData(updateForm);
+
+        const payload = Object.fromEntries([
+            'title',
+            'job_title',
+            'category',
+            'thumbnail',
+            'summary',
+            'content',
+            'ended_at',
+        ].map(name => [name, fields.get(name)]));
+
+        if (!payload.ended_at) payload.ended_at = null;
+
+        const response = await fetch(updateForm.dataset.apiUrl, {
+            method: 'PATCH',
+            headers: {
+                Accept: 'application/json',
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken'),
+            },
+            body: JSON.stringify(payload),
+        });
+
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+            const messages = Object.values(data)
+                .flat()
+                .filter(value => typeof value === 'string');
+
+            throw new Error(
+                messages.join(' ') || `Request gagal (HTTP ${response.status}).`
+            );
+        }
+
+        showToast('Berhasil', 'Experience berhasil diperbarui.', 'success');
+    } catch (error) {
+        showToast('Gagal menyimpan', error.message, 'error');
+    } finally {
+        submitButton.disabled = false;
+    }
+});
+</script>
+{% endblock %}
